@@ -3,15 +3,9 @@ plugins {
     id 'maven-publish'
 }
 
-repositories {
-    mavenCentral()
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
+// Published POM description; the rest of the publishing setup is shared from the
+// root build.
+description = "MCClauneck Plugin Common"
 
 dependencies {
     compileOnly project(':api')
@@ -24,36 +18,4 @@ dependencies {
 
 base {
     archivesName = "MCEconomyCommon"
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            pom {
-                name = project.name
-                description = "MCClauneck Plugin Common"
-                url = "https://mcclauneck.github.io/website"
-                developers {
-                    developer {
-                        id = "jetsadawijit"
-                        name = "jetsadawijit"
-                        url = "https://jetsadawijit.github.io"
-                    }
-                }
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
-            credentials {
-                username = System.getenv('GITHUB_ACTOR')
-                password = System.getenv('GITHUB_TOKEN')
-            }
-        }
-    }
 }

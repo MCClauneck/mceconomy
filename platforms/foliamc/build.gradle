@@ -4,16 +4,10 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
+    // mavenCentral and the Java toolchain are provided by the root build.
     maven {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 

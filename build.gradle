@@ -1,9 +1,12 @@
 /*
  * Root build for the consolidated MCEconomy monorepo.
  *
- * Shared configuration for every subproject lives here. Each module applies
- * its own plugins and declares its own dependencies, but the group, version
- * and Java toolchain are defined once for all of them.
+ * Shared configuration for every subproject lives here so the modules do not
+ * repeat it: the Java toolchain, the common Maven Central repository, and the
+ * public publishing metadata (POM info plus the GitHub Packages target) for the
+ * modules that publish. Each module only declares what is unique to it — its
+ * plugins, any extra repositories, its dependencies, its archive name, and (for
+ * a published module) its own one-line project description.
  */
 
 plugins {
@@ -19,5 +22,57 @@ allprojects {
 subprojects {
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
+    }
+
+    // Applies to every module that uses Java. The 'java' plugin id also covers
+    // 'java-library', which applies the java plugin under the hood.
+    plugins.withId('java') {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(25)
+            }
+        }
+
+        repositories {
+            mavenCentral()
+        }
+    }
+
+    // Shared public publishing metadata for the library modules. The GitHub
+    // Packages target and the developer/URL info are identical for every
+    // published module; only the description (project.description) differs, so it
+    // is read lazily from each module.
+    plugins.withId('maven-publish') {
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    from components.java
+
+                    pom {
+                        name = project.name
+                        description = provider { project.description }
+                        url = "https://mcclauneck.github.io/website"
+                        developers {
+                            developer {
+                                id = "jetsadawijit"
+                                name = "jetsadawijit"
+                                url = "https://jetsadawijit.github.io"
+                            }
+                        }
+                    }
+                }
+            }
+
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
+                    credentials {
+                        username = System.getenv('GITHUB_ACTOR')
+                        password = System.getenv('GITHUB_TOKEN')
+                    }
+                }
+            }
+        }
     }
 }
