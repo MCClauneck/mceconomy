@@ -7,8 +7,6 @@ plugin. It merges six formerly separate repositories into a single Gradle multi-
 
 ```text
 mceconomy/
-├── AGENTS.md                 # Authoritative agent instruction set (read first)
-├── CLAUDE.md                 # Thin router to AGENTS.md for Claude Code
 ├── INDEX.md                  # This file — project structure
 ├── README.md                 # Project overview, build guide, and requirements
 ├── LICENSE
@@ -17,7 +15,6 @@ mceconomy/
 ├── gradle.properties         # Project identity and version (single source of truth)
 ├── gradlew / gradlew.bat     # Gradle wrapper
 ├── gradle/                   # Wrapper distribution metadata
-├── .agents/                  # Specialised agent instructions (see .agents/README.md)
 │
 ├── api/                      # io.github.mcclauneck:api      — PUBLISHED library
 ├── common/                   # io.github.mcclauneck:common   — PUBLISHED library
@@ -39,11 +36,10 @@ mceconomy/
 | `foliamc` | `:foliamc` | No | FoliaMC platform entry point (shaded jar). |
 
 Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
-Cross-module dependencies are wired with Gradle `project(':...')` references; see
-[`.agents/architecture/structure.md`](.agents/architecture/structure.md) for the full wiring
-and publishing rules.
+Cross-module dependencies are wired with Gradle `project(':...')` references; see each module's
+`build.gradle` for the full wiring and [`README.md`](README.md) for the publishing rules.
 
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
-- Agent rules → `AGENTS.md` and `.agents/` (start at `.agents/README.md`).
-- Per-module platform standards → each platform module's `SKILLS.md`.
+- Per-module details → each module's `README.md`.
+- Project overview, build, publishing and requirements → [`README.md`](README.md).

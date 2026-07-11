@@ -19,8 +19,7 @@ On `onEnable`, the plugin:
 7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block the main server thread. Follow the
-SpigotMC scheduling conventions described in
-[`.agents/platforms/spigotmc/concurrency.md`](../.agents/platforms/spigotmc/concurrency.md).
+standard SpigotMC scheduling conventions.
 
 ## Dependencies
 

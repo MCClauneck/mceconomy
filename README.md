@@ -61,8 +61,7 @@ choose a `database.type`, and customize the `currencies` list.
 
 Versions follow Semantic Versioning (`Major.Minor.Patch`, optionally `-{type}` such as
 `1.0.0-beta`). `project-version` in [`gradle.properties`](gradle.properties) is the single
-source of truth for every module. See
-[`.agents/gradle/versioning.md`](.agents/gradle/versioning.md).
+source of truth for every module.
 
 ## Requirements
 
@@ -76,8 +75,7 @@ source of truth for every module. See
 - **Credentials (GitHub Packages):** publishing `api`/`common` and resolving the
   `io.github.mcengine:*` extension artifacts require GitHub Packages credentials, resolved from
   `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then
-  `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`. See
-  [`.agents/credentials/github.md`](.agents/credentials/github.md).
+  `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
 
 ## License
 

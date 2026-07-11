@@ -20,8 +20,7 @@ On `onEnable`, the plugin:
 7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block server threads. Respect Folia's region
-model and schedulers as described in
-[`.agents/platforms/foliamc/concurrency.md`](../.agents/platforms/foliamc/concurrency.md).
+model and schedulers.
 
 ## Dependencies
 
