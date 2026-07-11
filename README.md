@@ -15,9 +15,9 @@ All modules share the group `io.github.mcclauneck` and one Semantic Version
 | [`api`](api) | `:api` | **`io.github.mcclauneck:api`** | Pure-Java data contracts and immutable models. No platform or database dependencies. |
 | [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/API database backends. |
 | [`bukkit`](bukkit) | `:bukkit` | — | Shared Bukkit events and listeners, reused by every platform. |
-| [`spigotmc`](spigotmc) | `:spigotmc` | — | SpigotMC plugin entry point; produces the shaded distributable jar. |
-| [`papermc`](papermc) | `:papermc` | — | PaperMC plugin entry point; produces the shaded distributable jar. |
-| [`foliamc`](foliamc) | `:foliamc` | — | FoliaMC plugin entry point; produces the shaded distributable jar. |
+| [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; produces the shaded distributable jar. |
+| [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; produces the shaded distributable jar. |
+| [`foliamc`](platforms/foliamc) | `:platforms:foliamc` | — | FoliaMC plugin entry point; produces the shaded distributable jar. |
 
 Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
 Modules depend on each other through Gradle `project(':...')` references, so a single build
@@ -29,9 +29,9 @@ The project uses the Gradle wrapper.
 
 ```bash
 ./gradlew build                 # build every module
-./gradlew :papermc:build        # build one platform (also: spigotmc, foliamc)
-./gradlew :papermc:shadowJar    # produce just the shaded PaperMC plugin jar
-./gradlew :papermc:exportJar    # copy the jar to $PAPERMC_PLUGIN_JAR_PATH if set
+./gradlew :platforms:papermc:build        # build one platform (also: spigotmc, foliamc)
+./gradlew :platforms:papermc:shadowJar    # produce just the shaded PaperMC plugin jar
+./gradlew :platforms:papermc:exportJar    # copy the jar to $PAPERMC_PLUGIN_JAR_PATH if set
 ```
 
 The platform modules (`spigotmc`, `papermc`, `foliamc`) produce the distributable, shaded
