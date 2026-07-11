@@ -17,7 +17,6 @@ On `onEnable`, the plugin:
 4. `loadCurrencies()` — caches all currencies in memory.
 5. `ensureDefaultCurrencies()` — generates the configured default currencies on first run.
 6. Registers `PlayerJoinCurrencyListener` so defaults are re-verified on player join.
-7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block server threads. Respect Folia's region
 model and schedulers.
@@ -26,7 +25,6 @@ model and schedulers.
 
 - [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
-- `io.github.mcengine:manager`, `:foliamc` — the MCExtension system (relocated into `io.github.mcclauneck`).
 - `dev.folia:folia-api` — `compileOnly`.
 
 ## Building

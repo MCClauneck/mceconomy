@@ -16,7 +16,6 @@ On `onEnable`, the plugin:
 4. `loadCurrencies()` — caches all currencies in memory.
 5. `ensureDefaultCurrencies()` — generates the configured default currencies on first run.
 6. Registers `PlayerJoinCurrencyListener` so defaults are re-verified on player join.
-7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block the main server thread. Follow the
 standard SpigotMC scheduling conventions.
@@ -25,7 +24,6 @@ standard SpigotMC scheduling conventions.
 
 - [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
-- `io.github.mcengine:manager`, `:spigotmc` — the MCExtension system (relocated into `io.github.mcclauneck`).
 - `org.spigotmc:spigot-api` — `compileOnly`.
 
 ## Building
