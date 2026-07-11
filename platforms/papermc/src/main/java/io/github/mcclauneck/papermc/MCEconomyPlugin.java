@@ -1,6 +1,7 @@
 package io.github.mcclauneck.papermc;
 
 import io.github.mcclauneck.api.database.IEconomyDatabase;
+import io.github.mcclauneck.bukkit.listener.IdentityAccountListener;
 import io.github.mcclauneck.bukkit.listener.PlayerJoinCurrencyListener;
 import io.github.mcclauneck.common.MCEconomyProvider;
 import io.github.mcclauneck.common.database.api.MCEconomyAPI;
@@ -105,6 +106,9 @@ public class MCEconomyPlugin extends JavaPlugin {
 
         // Keep the default currencies present by re-checking whenever a player joins
         getServer().getPluginManager().registerEvents(new PlayerJoinCurrencyListener(this.provider, logger), this);
+
+        // Give every equipped MCIdentity identity its own "identity" economy account
+        getServer().getPluginManager().registerEvents(new IdentityAccountListener(this.provider, logger), this);
 
         logger.info("MCEconomy Plugin has been successfully enabled!");
     }

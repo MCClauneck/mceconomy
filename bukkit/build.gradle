@@ -10,6 +10,18 @@ repositories {
     maven {
         url = 'https://oss.sonatype.org/content/repositories/snapshots'
     }
+    maven {
+        // GitHub Packages always requires authentication, even for public packages.
+        name = 'MCIdentityGitHubPackages'
+        url = 'https://maven.pkg.github.com/MCOriax/mcidentity'
+        credentials {
+            username = System.getenv('GITHUB_ACTOR') ?: System.getenv('AGENT_GITHUB_NAME') ?: System.getenv('USER_GITHUB_NAME')
+            password = System.getenv('GITHUB_TOKEN') ?: System.getenv('AGENT_GITHUB_TOKEN') ?: System.getenv('USER_GITHUB_TOKEN')
+        }
+        content {
+            includeGroup 'io.github.mcoriax'
+        }
+    }
 }
 
 java {
@@ -22,6 +34,11 @@ dependencies {
     api project(':api')
     implementation project(':common')
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+
+    // MCIdentity — provided by the server at runtime, so compileOnly only.
+    compileOnly 'io.github.mcoriax:api:1.0.0'
+    compileOnly 'io.github.mcoriax:common:1.0.0'
+    compileOnly 'io.github.mcoriax:bukkit:1.0.0'
 }
 
 base {
