@@ -14,7 +14,7 @@ All modules share the group `io.github.mcclauneck` and one Semantic Version
 | --- | --- | --- | --- |
 | [`api`](api) | `:api` | **`io.github.mcclauneck:api`** | Pure-Java data contracts and immutable models. No platform or database dependencies. |
 | [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/API database backends. |
-| [`bukkit`](bukkit) | `:bukkit` | — | Shared Bukkit events and listeners, reused by every platform. |
+| [`bukkit`](bukkit) | `:bukkit` | **`io.github.mcclauneck:bukkit`** | Shared Bukkit events and listeners, reused by every platform. |
 | [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; produces the shaded distributable jar. |
 | [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; produces the shaded distributable jar. |
 | [`foliamc`](platforms/foliamc) | `:platforms:foliamc` | — | FoliaMC plugin entry point; produces the shaded distributable jar. |
@@ -40,17 +40,19 @@ plugin jars, and accept `SPIGOTMC_PLUGIN_JAR_PATH` / `PAPERMC_PLUGIN_JAR_PATH` /
 
 ## Publishing
 
-Only the two reusable libraries publish to GitHub Packages
+Only the three reusable libraries publish to GitHub Packages
 (`https://maven.pkg.github.com/MCClauneck/mceconomy`):
 
 ```bash
 ./gradlew :api:publish
 ./gradlew :common:publish
+./gradlew :bukkit:publish
 ```
 
-The `bukkit`, `spigotmc`, `papermc`, and `foliamc` modules do **not** publish — `bukkit` is an
-internal library consumed via a project reference, and the platform modules are terminal
-distributable jars.
+The `spigotmc`, `papermc`, and `foliamc` platform modules do **not** publish — they are
+terminal distributable, shaded jars. Each library module declares its own dependencies as
+`compileOnly`, so the platform modules are the single place that shades `api`, `common`, and
+`bukkit` into the distributable jar.
 
 ## MCIdentity integration
 
