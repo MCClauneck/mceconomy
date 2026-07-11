@@ -1,4 +1,4 @@
-package io.github.mcclauneck.bukkit.events;
+package io.github.mcclauneck.bukkit.event;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -6,7 +6,9 @@ import org.bukkit.event.HandlerList;
 import java.util.UUID;
 
 /**
- * A Bukkit custom event triggered when an account's wallet balance changes.
+ * A Bukkit custom event fired <strong>after</strong> an account's wallet balance
+ * has changed. It is a notification only and cannot be cancelled; to veto a
+ * balance change before it happens, listen to {@link EconomyTransactionEvent}.
  */
 public class EconomyWalletUpdateEvent extends Event {
 

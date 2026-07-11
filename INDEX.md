@@ -45,9 +45,16 @@ published artifacts (`io.github.mcoriax:api`/`common`/`bukkit`) to bind economy 
 type `identity` to equipped identities; every platform `plugin.yml` declares
 `depend: [MCIdentity]`.
 
+## Documentation
+
+| Directory | Purpose |
+|---|---|
+| [`wiki/`](wiki/) | Human-facing documentation. `api.md` is the developer API guide for third-party plugins integrating with MCEconomy (covers the `api`, `common`, and `bukkit` modules, with a cancel-give-money event example). |
+
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
 - Per-module details → each module's `README.md`.
+- Developer API integration → [`wiki/api.md`](wiki/api.md).
 - MCIdentity integration → [`bukkit/README.md`](bukkit/README.md) and the root
   [`README.md`](README.md).
 - Project overview, build, publishing and requirements → [`README.md`](README.md).

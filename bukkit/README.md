@@ -13,7 +13,8 @@ the SpigotMC API and the MCIdentity integration artifacts only.
 
 | Component | Description |
 | --- | --- |
-| `event/EconomyWalletUpdateEvent` | Custom Bukkit event fired when a wallet balance changes. |
+| `event/EconomyTransactionEvent` | Cancellable Bukkit event fired before a balance change; the veto point (e.g. cancel giving money to a player). |
+| `event/EconomyWalletUpdateEvent` | Notification-only Bukkit event fired after a wallet balance changes. |
 | `listener/PlayerJoinCurrencyListener` | Re-verifies the configured default currencies on player join. |
 | `listener/IdentityAccountListener` | Ensures an `identity` economy account exists (keyed by the identity UUID) whenever a player equips an MCIdentity identity. |
 
