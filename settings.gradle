@@ -1,0 +1,23 @@
+/*
+ * Consolidated multi-module build for the MCEconomy project.
+ *
+ * Every platform and shared library that previously lived in its own
+ * repository (plugin-api, plugin-common, plugin-bukkit, plugin-spigotmc,
+ * plugin-papermc, plugin-foliamc) is now a Gradle subproject here. The
+ * subproject names are kept as the Maven artifactIds ("api", "common", ...)
+ * so published coordinates stay io.github.mcclauneck:<module>.
+ */
+
+plugins {
+    // Apply the foojay-resolver plugin to allow automatic download of JDKs
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'mceconomy'
+
+include 'api'
+include 'common'
+include 'bukkit'
+include 'spigotmc'
+include 'papermc'
+include 'foliamc'

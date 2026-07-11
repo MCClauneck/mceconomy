@@ -1,0 +1,57 @@
+# MCEconomy Common (`common`)
+
+The platform-agnostic logic module for the **MCEconomy** multi-platform Minecraft economy
+plugin. It contains the central `MCEconomyProvider` and the database implementations, and is
+strictly responsible for **getting and setting data from the database**.
+
+> The `common` module of the [MCEconomy monorepo](../README.md). Its Gradle project name is
+> **`common`**, so published coordinates are `io.github.mcclauneck:common`.
+
+## Contents
+
+| Component | Description |
+| --- | --- |
+| `MCEconomyProvider` | Central provider; caches currencies and orchestrates balance operations. |
+| `database/sqlite` | SQLite implementation of `IEconomyDatabase`. |
+| `database/mysql` | MySQL implementation. |
+| `database/postgresql` | PostgreSQL implementation. |
+| `database/mongodb` | MongoDB implementation. |
+| `database/api` | Remote central API backend (MCEngine server-expressjs) over HTTP. |
+| `http/MCEconomyHttpClient` | Lightweight HTTP client used by the API backend. |
+
+All database operations are asynchronous and return `CompletableFuture`s, so they never block
+the server thread.
+
+## Dependencies
+
+- [`api`](../api) — the data contracts (`compileOnly`, via `project(':api')`).
+
+Database drivers (HikariCP, MongoDB driver, Gson) are declared `compileOnly`; the consuming
+platform supplies them at runtime via its `plugin.yml` `libraries` block.
+
+## Published coordinates
+
+```
+io.github.mcclauneck:common:<project-version>
+```
+
+Published to GitHub Packages at `https://maven.pkg.github.com/MCClauneck/mceconomy`.
+
+## Building
+
+From the repository root:
+
+```bash
+./gradlew :common:build
+./gradlew :common:publish   # publishes to GitHub Packages (requires credentials)
+```
+
+## Related modules
+
+- [`api`](../api) — pure data contracts.
+- [`bukkit`](../bukkit) — shared Bukkit events and listeners.
+- [`papermc`](../papermc) / [`spigotmc`](../spigotmc) / [`foliamc`](../foliamc) — platform entry points.
+
+## License
+
+See [LICENSE](../LICENSE).
