@@ -70,6 +70,13 @@ The MCIdentity artifacts (`io.github.mcoriax:api`, `io.github.mcoriax:common`,
 `io.github.mcoriax:bukkit`, version `1.0.0`) are consumed `compileOnly` from the MCIdentity
 GitHub Packages registry — the plugin provides the classes at runtime, so nothing is shaded.
 
+## Developer API
+
+Third-party plugins integrate with MCEconomy through the published `api`, `common`, and
+`bukkit` libraries and the `MCEconomyProvider`. See the developer guide in
+[`wiki/api.md`](wiki/api.md) for dependency setup, the provider method reference, and the
+Bukkit events (including how to cancel giving money to a player).
+
 ## Configuration
 
 Each platform module ships a `src/main/resources/config.yml`. Set `enable: true` to activate,
