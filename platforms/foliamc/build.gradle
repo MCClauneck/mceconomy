@@ -9,15 +9,6 @@ repositories {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
-    maven {
-        // MCEngine extension artifacts (io.github.mcengine:*)
-        name = "MCEngine"
-        url = "https://maven.pkg.github.com/MCEngine/mcextension"
-        credentials {
-            username = System.getenv('GITHUB_ACTOR')
-            password = System.getenv('GITHUB_TOKEN')
-        }
-    }
 }
 
 java {
@@ -30,8 +21,6 @@ dependencies {
     implementation project(':api')
     implementation project(':common')
     implementation project(':bukkit')
-    implementation 'io.github.mcengine:manager:2026.0.6-5'
-    implementation 'io.github.mcengine:foliamc:2026.0.6-5'
 
     compileOnly 'org.xerial:sqlite-jdbc:3.53.0.0'
 
@@ -53,8 +42,6 @@ shadowJar {
 
     // Ensure all implementation dependencies are shadowed
     configurations = [project.configurations.runtimeClasspath]
-
-    relocate "io.github.mcengine", "io.github.mcclauneck"
 }
 
 processResources {

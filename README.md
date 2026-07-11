@@ -72,10 +72,9 @@ source of truth for every module.
   matching the platform module you deploy.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
-- **Credentials (GitHub Packages):** publishing `api`/`common` and resolving the
-  `io.github.mcengine:*` extension artifacts require GitHub Packages credentials, resolved from
-  `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then
-  `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+- **Credentials (GitHub Packages):** publishing `api`/`common` requires GitHub Packages
+  credentials, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then
+  `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
 
 ## License
 
