@@ -117,7 +117,3 @@ tasks.register('exportJar') {
 }
 
 build.finalizedBy exportJar
-
-tasks.register('clean', Delete) {
-    delete layout.buildDirectory
-}

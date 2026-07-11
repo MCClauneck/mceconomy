@@ -27,7 +27,3 @@ dependencies {
 base {
     archivesName = "MCEconomyBukkit"
 }
-
-tasks.register('clean', Delete) {
-    delete layout.buildDirectory
-}
