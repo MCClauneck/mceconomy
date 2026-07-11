@@ -17,6 +17,8 @@ On `onEnable`, the plugin:
 4. `loadCurrencies()` — caches all currencies in memory.
 5. `ensureDefaultCurrencies()` — generates the configured default currencies on first run.
 6. Registers `PlayerJoinCurrencyListener` so defaults are re-verified on player join.
+7. Registers `IdentityAccountListener` so every equipped MCIdentity identity gets its own
+   `identity` economy account, keyed by the identity UUID.
 
 All database operations are asynchronous and never block server threads. Respect Folia's region
 model and schedulers.
@@ -26,6 +28,8 @@ model and schedulers.
 - [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
 - `dev.folia:folia-api` — `compileOnly`.
+- **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the
+  plugin must be installed on the server.
 
 ## Building
 

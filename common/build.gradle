@@ -57,7 +57,3 @@ publishing {
         }
     }
 }
-
-tasks.register('clean', Delete) {
-    delete layout.buildDirectory
-}

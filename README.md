@@ -52,6 +52,22 @@ The `bukkit`, `spigotmc`, `papermc`, and `foliamc` modules do **not** publish �
 internal library consumed via a project reference, and the platform modules are terminal
 distributable jars.
 
+## MCIdentity integration
+
+MCEconomy integrates with the **MCIdentity** plugin (`MCOriax/mcidentity`) and declares it as
+a hard dependency (`depend: [MCIdentity]` in every platform `plugin.yml`), so MCIdentity must
+be installed on the server and always initializes first.
+
+Each MCIdentity identity is a fully separate character, so economy data is bound to the
+**identity UUID** — never the base player UUID. When a player equips an identity, the shared
+`IdentityAccountListener` ensures an economy account exists for that identity using the
+account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every identity a
+player owns therefore keeps its own wallets and transaction logs.
+
+The MCIdentity artifacts (`io.github.mcoriax:api`, `io.github.mcoriax:common`,
+`io.github.mcoriax:bukkit`, version `1.0.0`) are consumed `compileOnly` from the MCIdentity
+GitHub Packages registry — the plugin provides the classes at runtime, so nothing is shaded.
+
 ## Configuration
 
 Each platform module ships a `src/main/resources/config.yml`. Set `enable: true` to activate,
@@ -70,11 +86,14 @@ source of truth for every module.
   not already installed; otherwise install a JDK 25 locally.
 - **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer,
   matching the platform module you deploy.
+- **MCIdentity plugin:** MCEconomy hard-depends on the MCIdentity plugin
+  (`depend: [MCIdentity]`), so it must be installed on the server.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
-- **Credentials (GitHub Packages):** publishing `api`/`common` requires GitHub Packages
-  credentials, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then
-  `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+- **Credentials (GitHub Packages):** building the `bukkit` module (resolving the MCIdentity
+  artifacts) and publishing `api`/`common` require GitHub Packages credentials with the
+  `read:packages`/`write:packages` scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI),
+  then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
 
 ## License
 
