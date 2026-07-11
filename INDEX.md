@@ -19,9 +19,10 @@ mceconomy/
 ├── api/                      # io.github.mcclauneck:api      — PUBLISHED library
 ├── common/                   # io.github.mcclauneck:common   — PUBLISHED library
 ├── bukkit/                   # shared Bukkit events/listeners (internal, not published)
-├── spigotmc/                 # SpigotMC plugin entry point (shaded jar, not published)
-├── papermc/                  # PaperMC plugin entry point (shaded jar, not published)
-└── foliamc/                  # FoliaMC plugin entry point (shaded jar, not published)
+└── platforms/                # platform entry points (shaded jars, not published)
+    ├── spigotmc/             # SpigotMC plugin entry point
+    ├── papermc/              # PaperMC plugin entry point
+    └── foliamc/              # FoliaMC plugin entry point
 ```
 
 ## Modules
@@ -31,9 +32,9 @@ mceconomy/
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
 | `bukkit` | `:bukkit` | No | Shared Bukkit events and listeners. |
-| `spigotmc` | `:spigotmc` | No | SpigotMC platform entry point (shaded jar). |
-| `papermc` | `:papermc` | No | PaperMC platform entry point (shaded jar). |
-| `foliamc` | `:foliamc` | No | FoliaMC platform entry point (shaded jar). |
+| `spigotmc` | `:platforms:spigotmc` | No | SpigotMC platform entry point (shaded jar). |
+| `papermc` | `:platforms:papermc` | No | PaperMC platform entry point (shaded jar). |
+| `foliamc` | `:platforms:foliamc` | No | FoliaMC platform entry point (shaded jar). |
 
 Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
 Cross-module dependencies are wired with Gradle `project(':...')` references; see each module's
