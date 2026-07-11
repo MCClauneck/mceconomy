@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+dependencies {
+    compileOnly project(':api')
+
+    compileOnly 'com.zaxxer:HikariCP:7.0.2'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.7.0'
+
+    compileOnly 'com.google.code.gson:gson:2.14.0'
+}
+
+base {
+    archivesName = "MCEconomyCommon"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = project.name
+                description = "MCClauneck Plugin Common"
+                url = "https://mcclauneck.github.io/website"
+                developers {
+                    developer {
+                        id = "jetsadawijit"
+                        name = "jetsadawijit"
+                        url = "https://jetsadawijit.github.io"
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete layout.buildDirectory
+}
