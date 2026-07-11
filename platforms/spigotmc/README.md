@@ -16,6 +16,8 @@ On `onEnable`, the plugin:
 4. `loadCurrencies()` — caches all currencies in memory.
 5. `ensureDefaultCurrencies()` — generates the configured default currencies on first run.
 6. Registers `PlayerJoinCurrencyListener` so defaults are re-verified on player join.
+7. Registers `IdentityAccountListener` so every equipped MCIdentity identity gets its own
+   `identity` economy account, keyed by the identity UUID.
 
 All database operations are asynchronous and never block the main server thread. Follow the
 standard SpigotMC scheduling conventions.
@@ -25,6 +27,8 @@ standard SpigotMC scheduling conventions.
 - [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
 - `org.spigotmc:spigot-api` — `compileOnly`.
+- **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the
+  plugin must be installed on the server.
 
 ## Building
 
