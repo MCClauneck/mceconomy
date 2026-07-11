@@ -1,9 +1,9 @@
-# MCEconomy PaperMC (`papermc`)
+# MCEconomy SpigotMC (`spigotmc`)
 
-The **PaperMC** platform entry point for the **MCEconomy** multi-platform Minecraft economy
+The **SpigotMC** platform entry point for the **MCEconomy** multi-platform Minecraft economy
 plugin. It wires the shared modules together into a single distributable, shaded jar.
 
-> The `papermc` module of the [MCEconomy monorepo](../README.md). It produces a terminal
+> The `spigotmc` module of the [MCEconomy monorepo](../../README.md). It produces a terminal
 > distributable jar and is **not published**.
 
 ## Runtime flow
@@ -19,23 +19,23 @@ On `onEnable`, the plugin:
 7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block the main server thread. Follow the
-standard PaperMC scheduling and Adventure (`Component.translatable()`) conventions.
+standard SpigotMC scheduling conventions.
 
 ## Dependencies
 
-- [`api`](../api), [`common`](../common), [`bukkit`](../bukkit) — the shared MCEconomy modules
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
-- `io.github.mcengine:manager`, `:papermc` — the MCExtension system (relocated into `io.github.mcclauneck`).
-- `io.papermc.paper:paper-api` — `compileOnly`.
+- `io.github.mcengine:manager`, `:spigotmc` — the MCExtension system (relocated into `io.github.mcclauneck`).
+- `org.spigotmc:spigot-api` — `compileOnly`.
 
 ## Building
 
 From the repository root:
 
 ```bash
-./gradlew :papermc:build          # produces the shaded plugin jar
-./gradlew :papermc:shadowJar      # the distributable jar only
-./gradlew :papermc:exportJar      # also copies the jar to $PAPERMC_PLUGIN_JAR_PATH if set
+./gradlew :platforms:spigotmc:build          # produces the shaded plugin jar
+./gradlew :platforms:spigotmc:shadowJar      # the distributable jar only
+./gradlew :platforms:spigotmc:exportJar      # also copies the jar to $SPIGOTMC_PLUGIN_JAR_PATH if set
 ```
 
 The build uses the Gradle wrapper and targets a **Java 25** toolchain.
@@ -47,9 +47,9 @@ activate, choose a `database.type`, and customize the `currencies` list.
 
 ## Related modules
 
-- [`api`](../api), [`common`](../common), [`bukkit`](../bukkit) — shared modules.
-- [`spigotmc`](../spigotmc), [`foliamc`](../foliamc) — the other platform entry points.
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — shared modules.
+- [`papermc`](../papermc), [`foliamc`](../foliamc) — the other platform entry points.
 
 ## License
 
-See [LICENSE](../LICENSE).
+See [LICENSE](../../LICENSE).

@@ -4,7 +4,7 @@ The **FoliaMC** platform entry point for the **MCEconomy** multi-platform Minecr
 plugin. It wires the shared modules together into a single distributable, shaded jar and uses
 Folia's region/async schedulers.
 
-> The `foliamc` module of the [MCEconomy monorepo](../README.md). It produces a terminal
+> The `foliamc` module of the [MCEconomy monorepo](../../README.md). It produces a terminal
 > distributable jar and is **not published**.
 
 ## Runtime flow
@@ -24,7 +24,7 @@ model and schedulers.
 
 ## Dependencies
 
-- [`api`](../api), [`common`](../common), [`bukkit`](../bukkit) — the shared MCEconomy modules
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
   (via `project(':...')`).
 - `io.github.mcengine:manager`, `:foliamc` — the MCExtension system (relocated into `io.github.mcclauneck`).
 - `dev.folia:folia-api` — `compileOnly`.
@@ -34,9 +34,9 @@ model and schedulers.
 From the repository root:
 
 ```bash
-./gradlew :foliamc:build          # produces the shaded plugin jar
-./gradlew :foliamc:shadowJar      # the distributable jar only
-./gradlew :foliamc:exportJar      # also copies the jar to $FOLIAMC_PLUGIN_JAR_PATH if set
+./gradlew :platforms:foliamc:build          # produces the shaded plugin jar
+./gradlew :platforms:foliamc:shadowJar      # the distributable jar only
+./gradlew :platforms:foliamc:exportJar      # also copies the jar to $FOLIAMC_PLUGIN_JAR_PATH if set
 ```
 
 The build uses the Gradle wrapper and targets a **Java 25** toolchain.
@@ -48,9 +48,9 @@ activate, choose a `database.type`, and customize the `currencies` list.
 
 ## Related modules
 
-- [`api`](../api), [`common`](../common), [`bukkit`](../bukkit) — shared modules.
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — shared modules.
 - [`spigotmc`](../spigotmc), [`papermc`](../papermc) — the other platform entry points.
 
 ## License
 
-See [LICENSE](../LICENSE).
+See [LICENSE](../../LICENSE).
