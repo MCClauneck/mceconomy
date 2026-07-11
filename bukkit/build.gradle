@@ -1,0 +1,33 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+    }
+    maven {
+        url = 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+dependencies {
+    api project(':api')
+    implementation project(':common')
+    compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+}
+
+base {
+    archivesName = "MCEconomyBukkit"
+}
+
+tasks.register('clean', Delete) {
+    delete layout.buildDirectory
+}
