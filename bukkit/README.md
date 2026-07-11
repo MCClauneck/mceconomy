@@ -4,9 +4,10 @@ The shared Bukkit module for the **MCEconomy** multi-platform Minecraft economy 
 holds the core event structures and listeners reused by every platform, and compiles against
 the SpigotMC API and the MCIdentity integration artifacts only.
 
-> The `bukkit` module of the [MCEconomy monorepo](../README.md). It is an **internal** library
-> consumed by the platform modules through a Gradle `project(':bukkit')` reference, and is
-> **not published**.
+> The `bukkit` module of the [MCEconomy monorepo](../README.md). Its Gradle project name is
+> **`bukkit`**, so published coordinates are `io.github.mcclauneck:bukkit`. It is consumed by
+> the platform modules through a Gradle `project(':bukkit')` reference, and is **published** to
+> GitHub Packages so third-party plugins can compile against its events.
 
 ## Contents
 
@@ -29,12 +30,15 @@ the server at runtime, so nothing is shaded into the distributable jars.
 
 ## Dependencies
 
-- [`api`](../api) — exposed transitively (`api` configuration, via `project(':api')`).
-- [`common`](../common) — `implementation` scope (via `project(':common')`).
-- `org.spigotmc:spigot-api` — `compileOnly`.
+All dependencies are `compileOnly`: the platform modules shade `api`, `common`, and `bukkit`
+into the distributable jar, so this module never bundles them itself.
+
+- [`api`](../api) — `compileOnly` (via `project(':api')`).
+- [`common`](../common) — `compileOnly` (via `project(':common')`).
+- `org.spigotmc:spigot-api` — `compileOnly` (provided by the server).
 - `io.github.mcoriax:api` / `io.github.mcoriax:common` / `io.github.mcoriax:bukkit`
   (MCIdentity `1.0.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
-  registry.
+  registry (provided by the MCIdentity plugin at runtime).
 
 ## Building
 
@@ -42,12 +46,13 @@ From the repository root:
 
 ```bash
 ./gradlew :bukkit:build
+./gradlew :bukkit:publish   # publishes to GitHub Packages (requires credentials)
 ```
 
-GitHub Packages always requires authentication, even for public packages, so building this
-module needs credentials with the `read:packages` scope. They are resolved from
-`GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then
-`USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+GitHub Packages always requires authentication, even for public packages, so building and
+publishing this module needs credentials with the `read:packages` (build) and `write:packages`
+(publish) scopes. They are resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then
+`AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
 
 ## Related modules
 

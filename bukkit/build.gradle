@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
 
 repositories {
@@ -31,8 +32,11 @@ java {
 }
 
 dependencies {
-    api project(':api')
-    implementation project(':common')
+    // The platform modules shade api, common, and bukkit into the distributable
+    // jar, so this module references them compileOnly to avoid pulling them into
+    // its own published artifact — the platform is what implements them into the jar.
+    compileOnly project(':api')
+    compileOnly project(':common')
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
 
     // MCIdentity — provided by the server at runtime, so compileOnly only.
@@ -43,4 +47,36 @@ dependencies {
 
 base {
     archivesName = "MCEconomyBukkit"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = project.name
+                description = "MCClauneck Plugin Bukkit"
+                url = "https://mcclauneck.github.io/website"
+                developers {
+                    developer {
+                        id = "jetsadawijit"
+                        name = "jetsadawijit"
+                        url = "https://jetsadawijit.github.io"
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
 }

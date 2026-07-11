@@ -18,7 +18,7 @@ mceconomy/
 │
 ├── api/                      # io.github.mcclauneck:api      — PUBLISHED library
 ├── common/                   # io.github.mcclauneck:common   — PUBLISHED library
-├── bukkit/                   # shared Bukkit events/listeners (internal, not published)
+├── bukkit/                   # io.github.mcclauneck:bukkit   — PUBLISHED library (Bukkit events/listeners)
 └── platforms/                # platform entry points (shaded jars, not published)
     ├── spigotmc/             # SpigotMC plugin entry point
     ├── papermc/              # PaperMC plugin entry point
@@ -31,7 +31,7 @@ mceconomy/
 | --- | --- | --- | --- |
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
-| `bukkit` | `:bukkit` | No | Shared Bukkit events and listeners, including the MCIdentity integration. |
+| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit events and listeners, including the MCIdentity integration. |
 | `spigotmc` | `:platforms:spigotmc` | No | SpigotMC platform entry point (shaded jar). |
 | `papermc` | `:platforms:papermc` | No | PaperMC platform entry point (shaded jar). |
 | `foliamc` | `:platforms:foliamc` | No | FoliaMC platform entry point (shaded jar). |
