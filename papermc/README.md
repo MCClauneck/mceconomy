@@ -19,8 +19,7 @@ On `onEnable`, the plugin:
 7. Boots the MCExtension system and registers the `/mceconomyextension` command.
 
 All database operations are asynchronous and never block the main server thread. Follow the
-PaperMC scheduling and Adventure (`Component.translatable()`) conventions described in
-[`.agents/platforms/papermc/concurrency.md`](../.agents/platforms/papermc/concurrency.md).
+standard PaperMC scheduling and Adventure (`Component.translatable()`) conventions.
 
 ## Dependencies
 
