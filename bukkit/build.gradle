@@ -3,8 +3,12 @@ plugins {
     id 'maven-publish'
 }
 
+// Published POM description; the rest of the publishing setup is shared from the
+// root build.
+description = "MCClauneck Plugin Bukkit"
+
 repositories {
-    mavenCentral()
+    // Module-specific repositories only; mavenCentral is provided by the root build.
     maven {
         url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
@@ -25,12 +29,6 @@ repositories {
     }
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
-
 dependencies {
     // The platform modules shade api, common, and bukkit into the distributable
     // jar, so this module references them compileOnly to avoid pulling them into
@@ -47,36 +45,4 @@ dependencies {
 
 base {
     archivesName = "MCEconomyBukkit"
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            pom {
-                name = project.name
-                description = "MCClauneck Plugin Bukkit"
-                url = "https://mcclauneck.github.io/website"
-                developers {
-                    developer {
-                        id = "jetsadawijit"
-                        name = "jetsadawijit"
-                        url = "https://jetsadawijit.github.io"
-                    }
-                }
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/${project.property('git-org-name')}/${project.property('git-repository')}"
-            credentials {
-                username = System.getenv('GITHUB_ACTOR')
-                password = System.getenv('GITHUB_TOKEN')
-            }
-        }
-    }
 }

@@ -4,18 +4,12 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
+    // mavenCentral and the Java toolchain are provided by the root build.
     maven {
         url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
     maven {
         url = 'https://oss.sonatype.org/content/repositories/snapshots'
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
