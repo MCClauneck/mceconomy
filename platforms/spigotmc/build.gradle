@@ -50,7 +50,7 @@ processResources {
     def props = [
         version: project.version,
         group: project.group,
-        name: 'MCAI'
+        name: 'MCEconomy'
     ]
     inputs.properties props
     filteringCharset 'UTF-8'
