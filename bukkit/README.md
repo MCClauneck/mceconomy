@@ -13,10 +13,13 @@ the SpigotMC API and the MCIdentity integration artifacts only.
 
 | Component | Description |
 | --- | --- |
+| `AbstractMCEconomyPlugin` | Shared plugin bootstrap (config, database wiring, provider, listener registration) extended by every platform entry point. |
 | `event/EconomyTransactionEvent` | Cancellable Bukkit event fired before a balance change; the veto point (e.g. cancel giving money to a player). |
 | `event/EconomyWalletUpdateEvent` | Notification-only Bukkit event fired after a wallet balance changes. |
-| `listener/PlayerJoinCurrencyListener` | Re-verifies the configured default currencies on player join. |
 | `listener/IdentityAccountListener` | Ensures an `identity` economy account exists (keyed by the identity UUID) whenever a player equips an MCIdentity identity. |
+
+The plugin integrates through MCIdentity events only — it registers no raw player
+listeners, so all economy state stays bound to identities rather than player accounts.
 
 ## MCIdentity integration
 
