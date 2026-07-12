@@ -1,22 +1,42 @@
 enable: false
 
-# Currencies that the plugin guarantees to exist.
-# Each entry is written as "code,Display Name,transferable":
-#   - code: the unique, lower-case system code stored in the database.
-#   - Display Name: the human-readable name shown to players.
+# Currencies that the plugin guarantees to exist, keyed by their unique,
+# lower-case system code:
+#   - display_name: the human-readable name shown to players.
 #   - transferable: true when the currency may move between accounts (for
-#     example with a pay command); false locks it to the account that earned
-#     it. Defaults to true when omitted.
+#     example with /pay); false locks it to the account that earned it.
+#     Defaults to true when omitted.
+#   - texture: the base64 head texture rendering the currency in the
+#     /balance GUI; a plain player head is shown when omitted.
 # Add, remove, or rename entries freely to define your own custom currencies.
 # Any listed currency that is missing is created when the plugin enables, and
 # a changed display name or transferable flag is applied on the next enable.
+# (The legacy list format "code,Display Name,transferable" is still accepted.)
 currencies:
-  - coin,Coin,true
-  - copper,Copper,true
-  - silver,Silver,true
-  - gold,Gold,false
-  - point,Point,false
-  - token,Token,false
+  coin:
+    display_name: Coin
+    transferable: true
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzQzOGUwYzhkYzU0N2Y0N2E1YWI3MTI0MGNhZDhhNzlmMTVkYjc1NDM3NzNkNzE3NTg4MmVmZDMzZmMyMTY0ZCJ9fX0=
+  copper:
+    display_name: Copper
+    transferable: true
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTgyYTAyY2IwNjBlNzQyYmExMzVhZjNjNjJkMWU0NTY5ZTUzNjUyMTYwNDk5NWY0ZTk2ZjdmYzNjMThmYjZlOCJ9fX0=
+  silver:
+    display_name: Silver
+    transferable: true
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTdlZmY3Zjc5YjFkNzQxMzJhNWYzY2U4NjE3MmUwMzdiNGY2MjM3NDliMDc2M2RlYjZmNjdhZjIzN2M3N2Q0MyJ9fX0=
+  gold:
+    display_name: Gold
+    transferable: false
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2U4MDI4NjFjOWM2Yzg5NGQxOGExZmUyZTIzOGQ2OTA4NTQ2OGNjODc1N2UxMzU3NTY0YmJhOTdlMDY3ZmVkMCJ9fX0=
+  point:
+    display_name: Point
+    transferable: false
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjM4YzUzZTY2ZjI4Y2YyYzdmYjE1MjNjOWU1ZGUxYWUwY2Y0ZDdhMWZhZjU1M2U3NTI0OTRhOGQ2ZDJlMzIifX19
+  token:
+    display_name: Token
+    transferable: false
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWQ5Y2M1OGFkMjVhMWFiMTZkMzZiYjVkNmQ0OTNjOGY1ODk4YzJiZjMwMmI2NGUzMjU5MjFjNDFjMzU4NjcifX19
 
 database:
   # Options: sqlite, postgresql, mysql, mongodb, api

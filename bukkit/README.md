@@ -13,10 +13,16 @@ the SpigotMC API and the MCIdentity integration artifacts only.
 
 | Component | Description |
 | --- | --- |
-| `AbstractMCEconomyPlugin` | Shared plugin bootstrap (config, database wiring, provider, listener registration) extended by every platform entry point. |
+| `AbstractMCEconomyPlugin` | Shared plugin bootstrap (config, database wiring, provider, listener and command registration) extended by every platform entry point. |
+| `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's active identity. |
+| `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two active identities. |
+| `config/CurrencyConfig` | Parses the `currencies` config section: definitions (display name, transferable) and per-currency head textures. |
 | `event/EconomyTransactionEvent` | Cancellable Bukkit event fired before a balance change; the veto point (e.g. cancel giving money to a player). |
 | `event/EconomyWalletUpdateEvent` | Notification-only Bukkit event fired after a wallet balance changes. |
+| `gui/BalanceGui`, `gui/BalanceGuiHolder`, `gui/BalanceGuiListener` | The paged balance GUI, its inventory holder, and the click listener. |
 | `listener/IdentityAccountListener` | Ensures an `identity` economy account exists (keyed by the identity UUID) whenever a player equips an MCIdentity identity. |
+| `scheduler/PlatformScheduler`, `scheduler/Schedulers`, `scheduler/BukkitPlatformScheduler` | Platform-agnostic scheduling (async work and entity-thread hops); Folia ships its own implementation in the foliamc module. |
+| `util/SkullTextures` | Builds custom player heads from base64 texture values. |
 
 The plugin integrates through MCIdentity events only — it registers no raw player
 listeners, so all economy state stays bound to identities rather than player accounts.

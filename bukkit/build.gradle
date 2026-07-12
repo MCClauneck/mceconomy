@@ -41,6 +41,17 @@ dependencies {
     compileOnly 'io.github.mcoriax:api:1.0.0'
     compileOnly 'io.github.mcoriax:common:1.0.0'
     compileOnly 'io.github.mcoriax:bukkit:1.0.0'
+
+    testImplementation project(':api')
+    testImplementation project(':common')
+    testImplementation 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 base {
