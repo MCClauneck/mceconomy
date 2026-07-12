@@ -145,10 +145,15 @@ Currencies are configured by the server owner and cached in memory. Fetch a
 import io.github.mcclauneck.api.models.Currency;
 
 Currency coin = economy().getCurrency("coin");   // null if no such currency
+
+boolean canBePaid = coin.transferable();         // mirrors the is_transferable column
 ```
 
 `getCurrencies()` returns every cached currency, and `getManagedCurrencies()`
-returns the configured system-code → display-name map.
+returns the configured system-code → `CurrencyDefinition` map (display name plus
+transferability). A currency with `transferable() == false` (for example a
+premium or reward currency) can never move between accounts —
+`transferBalance` rejects it.
 
 ### 2.3 Accounts
 
@@ -210,6 +215,7 @@ economy().setBalance(AccountTypes.IDENTITY, identityUuid, coin, 1000,
         LogScope.RECEIVE, UUID.randomUUID(), "admin", "set_balance");
 
 // Move money between two accounts atomically (debits sender, credits receiver).
+// Fails exceptionally when the currency is not transferable.
 economy().transferBalance(
         AccountTypes.IDENTITY, senderIdentityUuid,
         AccountTypes.IDENTITY, receiverIdentityUuid,
@@ -236,8 +242,8 @@ economy().transferBalance(
 <details>
 <summary><code>getManagedCurrencies()</code></summary>
 
-- **Description**: Returns the configured currencies as an unmodifiable, ordered system-code → display-name map.
-- **Return Type**: `Map<String, String>`
+- **Description**: Returns the configured currencies as an unmodifiable, ordered system-code → `CurrencyDefinition` map (display name plus transferability).
+- **Return Type**: `Map<String, CurrencyDefinition>`
 </details>
 
 <details>
@@ -292,7 +298,7 @@ economy().transferBalance(
 <details>
 <summary><code>transferBalance(String fromAccountType, UUID fromAccountUuid, String toAccountType, UUID toAccountUuid, Currency currency, long amount, UUID transactionUuid, String referenceType, String referenceId)</code></summary>
 
-- **Description**: Moves money between two accounts (debit sender with `SEND`, credit receiver with `RECEIVE`). Throws `IllegalArgumentException` if `amount` is not positive; completes exceptionally if the sender has insufficient funds.
+- **Description**: Moves money between two accounts (debit sender with `SEND`, credit receiver with `RECEIVE`). Throws `IllegalArgumentException` if `amount` is not positive; completes exceptionally if the sender has insufficient funds or the currency is not transferable (`IllegalStateException`).
 - **Return Type**: `CompletableFuture<Boolean>`
 </details>
 
@@ -306,7 +312,7 @@ economy().transferBalance(
 <details>
 <summary><code>loadCurrencies()</code> / <code>ensureDefaultCurrencies()</code></summary>
 
-- **Description**: Refresh the in-memory currency cache from the database, and create any configured currencies that are missing. Normally called by the plugin on enable.
+- **Description**: Refresh the in-memory currency cache from the database, and create any configured currencies that are missing (also syncing a changed display name or transferable flag). Normally called by the plugin on enable.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 

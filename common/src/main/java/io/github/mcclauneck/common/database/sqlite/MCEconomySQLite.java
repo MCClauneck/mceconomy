@@ -56,7 +56,8 @@ public class MCEconomySQLite implements IEconomyDatabase {
                 stmt.execute("PRAGMA foreign_keys = ON;");
                 
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_account (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
-                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id INTEGER PRIMARY KEY AUTOINCREMENT, system_code TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id INTEGER PRIMARY KEY AUTOINCREMENT, system_code TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL, is_transferable INTEGER NOT NULL DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+                addTransferableColumnIfMissing(stmt);
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid TEXT PRIMARY KEY, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'completed', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, scope TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL, transaction_uuid TEXT, reference_type TEXT, reference_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
@@ -64,6 +65,19 @@ public class MCEconomySQLite implements IEconomyDatabase {
                 throw new RuntimeException("Failed to initialize SQLite schema", e);
             }
         });
+    }
+
+    /**
+     * Adds the {@code is_transferable} column to databases created before the
+     * column existed. SQLite has no {@code ADD COLUMN IF NOT EXISTS}, so the
+     * duplicate-column error on already-migrated files is swallowed.
+     */
+    private void addTransferableColumnIfMissing(Statement stmt) {
+        try {
+            stmt.execute("ALTER TABLE economy_currency ADD COLUMN is_transferable INTEGER NOT NULL DEFAULT 1");
+        } catch (SQLException e) {
+            // Column already exists.
+        }
     }
 
     @Override
@@ -106,12 +120,14 @@ public class MCEconomySQLite implements IEconomyDatabase {
     }
 
     @Override
-    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName) {
+    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "INSERT OR IGNORE INTO economy_currency (system_code, display_name) VALUES (?, ?)";
+            String sql = "INSERT INTO economy_currency (system_code, display_name, is_transferable) VALUES (?, ?, ?) "
+                    + "ON CONFLICT (system_code) DO UPDATE SET display_name = excluded.display_name, is_transferable = excluded.is_transferable, updated_at = CURRENT_TIMESTAMP";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
                 ps.setString(2, displayName);
+                ps.setInt(3, transferable ? 1 : 0);
                 ps.execute();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -122,7 +138,7 @@ public class MCEconomySQLite implements IEconomyDatabase {
                 fetchPs.setString(1, systemCode);
                 try (ResultSet rs = fetchPs.executeQuery()) {
                     if (rs.next()) {
-                        return new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"), parseTimestamp(rs.getString("created_at")).toInstant(), parseTimestamp(rs.getString("updated_at")).toInstant());
+                        return readCurrency(rs);
                     }
                 }
                 throw new SQLException("Failed to retrieve currency after insert.");
@@ -139,13 +155,22 @@ public class MCEconomySQLite implements IEconomyDatabase {
             String sql = "SELECT * FROM economy_currency";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    currencies.add(new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"), parseTimestamp(rs.getString("created_at")).toInstant(), parseTimestamp(rs.getString("updated_at")).toInstant()));
+                    currencies.add(readCurrency(rs));
                 }
                 return currencies;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * Maps the current {@code economy_currency} result-set row to a {@link Currency}.
+     */
+    private Currency readCurrency(ResultSet rs) throws SQLException {
+        return new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"),
+                rs.getInt("is_transferable") != 0,
+                parseTimestamp(rs.getString("created_at")).toInstant(), parseTimestamp(rs.getString("updated_at")).toInstant());
     }
 
     @Override

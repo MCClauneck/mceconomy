@@ -52,14 +52,17 @@ public class MCEconomyPostgreSQL implements IEconomyDatabase {
                 
                 // Main Tables
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_account (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
-                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id SERIAL PRIMARY KEY, system_code VARCHAR(50) NOT NULL UNIQUE, display_name VARCHAR(100) NOT NULL, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
+                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id SERIAL PRIMARY KEY, system_code VARCHAR(50) NOT NULL UNIQUE, display_name VARCHAR(100) NOT NULL, is_transferable BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
+                // Migrate databases created before the column existed.
+                stmt.execute("ALTER TABLE economy_currency ADD COLUMN IF NOT EXISTS is_transferable BOOLEAN NOT NULL DEFAULT TRUE");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'completed', created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id BIGSERIAL PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
 
                 // Archive Tables
                 stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_account (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
-                stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_currency (id INT PRIMARY KEY, system_code VARCHAR(50) NOT NULL, display_name VARCHAR(100) NOT NULL, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
+                stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_currency (id INT PRIMARY KEY, system_code VARCHAR(50) NOT NULL, display_name VARCHAR(100) NOT NULL, is_transferable BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
+                stmt.execute("ALTER TABLE archive_economy_currency ADD COLUMN IF NOT EXISTS is_transferable BOOLEAN NOT NULL DEFAULT TRUE");
                 stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id))");
                 stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_logs (id BIGINT PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20), created_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
@@ -109,26 +112,18 @@ public class MCEconomyPostgreSQL implements IEconomyDatabase {
     }
 
     @Override
-    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName) {
+    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "INSERT INTO economy_currency (system_code, display_name) VALUES (?, ?) ON CONFLICT (system_code) DO NOTHING RETURNING id, created_at, updated_at";
+            String sql = "INSERT INTO economy_currency (system_code, display_name, is_transferable) VALUES (?, ?, ?) "
+                    + "ON CONFLICT (system_code) DO UPDATE SET display_name = EXCLUDED.display_name, is_transferable = EXCLUDED.is_transferable, updated_at = CURRENT_TIMESTAMP "
+                    + "RETURNING id, system_code, display_name, is_transferable, created_at, updated_at";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
                 ps.setString(2, displayName);
+                ps.setBoolean(3, transferable);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return new Currency(rs.getInt("id"), systemCode, displayName, rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
-                    }
-                }
-                
-                // If conflict, fetch existing
-                String fetchSql = "SELECT * FROM economy_currency WHERE system_code = ?";
-                try (PreparedStatement fetchPs = conn.prepareStatement(fetchSql)) {
-                    fetchPs.setString(1, systemCode);
-                    try (ResultSet frs = fetchPs.executeQuery()) {
-                        if (frs.next()) {
-                            return new Currency(frs.getInt("id"), frs.getString("system_code"), frs.getString("display_name"), frs.getTimestamp("created_at").toInstant(), frs.getTimestamp("updated_at").toInstant());
-                        }
+                        return readCurrency(rs);
                     }
                 }
                 throw new SQLException("Failed to create or fetch currency.");
@@ -145,13 +140,22 @@ public class MCEconomyPostgreSQL implements IEconomyDatabase {
             String sql = "SELECT * FROM economy_currency";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    currencies.add(new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"), rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant()));
+                    currencies.add(readCurrency(rs));
                 }
                 return currencies;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * Maps the current {@code economy_currency} result-set row to a {@link Currency}.
+     */
+    private Currency readCurrency(ResultSet rs) throws SQLException {
+        return new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"),
+                rs.getBoolean("is_transferable"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     @Override

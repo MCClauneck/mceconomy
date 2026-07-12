@@ -45,12 +45,14 @@ public interface IEconomyDatabase {
     CompletableFuture<Optional<Account>> getAccount(String accountType, UUID accountUuid);
 
     /**
-     * Creates a new currency in the system.
+     * Creates a currency in the system, or updates its display name and
+     * transferability when the system code already exists (upsert).
      * @param systemCode The unique system code for the currency (e.g., "gold").
      * @param displayName The display name of the currency.
-     * @return A CompletableFuture containing the newly created Currency.
+     * @param transferable Whether the currency can be moved between accounts.
+     * @return A CompletableFuture containing the created or updated Currency.
      */
-    CompletableFuture<Currency> createCurrency(String systemCode, String displayName);
+    CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable);
 
     /**
      * Retrieves all registered currencies.

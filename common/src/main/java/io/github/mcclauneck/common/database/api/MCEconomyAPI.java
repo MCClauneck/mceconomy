@@ -92,13 +92,16 @@ public class MCEconomyAPI implements IEconomyDatabase {
     }
 
     /**
-     * Parses a {@link Currency} from its JSON representation.
+     * Parses a {@link Currency} from its JSON representation. Responses from
+     * servers that predate the transferable flag default to transferable.
      */
     private static Currency parseCurrency(JsonObject json) {
+        JsonElement transferable = json.get("is_transferable");
         return new Currency(
                 json.get("id").getAsInt(),
                 json.get("system_code").getAsString(),
                 json.get("display_name").getAsString(),
+                transferable == null || transferable.isJsonNull() || transferable.getAsBoolean(),
                 Instant.parse(json.get("created_at").getAsString()),
                 Instant.parse(json.get("updated_at").getAsString())
         );
@@ -155,11 +158,12 @@ public class MCEconomyAPI implements IEconomyDatabase {
     }
 
     @Override
-    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName) {
+    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable) {
         JsonObject body = new JsonObject();
         body.addProperty("action", "create_currency");
         body.addProperty("system_code", systemCode);
         body.addProperty("display_name", displayName);
+        body.addProperty("is_transferable", transferable);
         return post(body).thenApply(json -> parseCurrency(json.getAsJsonObject("currency")));
     }
 

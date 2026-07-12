@@ -1,19 +1,22 @@
 enable: false
 
 # Currencies that the plugin guarantees to exist.
-# Each entry is written as "code,Display Name":
+# Each entry is written as "code,Display Name,transferable":
 #   - code: the unique, lower-case system code stored in the database.
 #   - Display Name: the human-readable name shown to players.
+#   - transferable: true when the currency may move between accounts (for
+#     example with a pay command); false locks it to the account that earned
+#     it. Defaults to true when omitted.
 # Add, remove, or rename entries freely to define your own custom currencies.
-# Any listed currency that is missing is created when the plugin enables, so
-# new entries appear on the next server restart or plugin reload.
+# Any listed currency that is missing is created when the plugin enables, and
+# a changed display name or transferable flag is applied on the next enable.
 currencies:
-  - coin,Coin
-  - copper,Copper
-  - silver,Silver
-  - gold,Gold
-  - point,Point
-  - token,Token
+  - coin,Coin,true
+  - copper,Copper,true
+  - silver,Silver,true
+  - gold,Gold,false
+  - point,Point,false
+  - token,Token,false
 
 database:
   # Options: sqlite, postgresql, mysql, mongodb, api
