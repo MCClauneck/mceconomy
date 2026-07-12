@@ -95,13 +95,21 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
     }
 
     @Override
-    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName) {
+    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable) {
         return CompletableFuture.supplyAsync(() -> {
             MongoCollection<Document> currencies = database.getCollection("economy_currency");
-            Document existing = currencies.find(Filters.eq("system_code", systemCode)).first();
-            
+            Document existing = currencies.findOneAndUpdate(
+                Filters.eq("system_code", systemCode),
+                Updates.combine(
+                    Updates.set("display_name", displayName),
+                    Updates.set("is_transferable", transferable),
+                    Updates.set("updated_at", Instant.now().toString())
+                ),
+                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+            );
+
             if (existing != null) {
-                return new Currency(existing.getInteger("_id"), existing.getString("system_code"), existing.getString("display_name"), Instant.parse(existing.getString("created_at")), Instant.parse(existing.getString("updated_at")));
+                return readCurrency(existing);
             }
 
             // Generate an auto-incrementing integer ID for compatibility with the API
@@ -116,11 +124,12 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
             Document doc = new Document("_id", newId)
                 .append("system_code", systemCode)
                 .append("display_name", displayName)
+                .append("is_transferable", transferable)
                 .append("created_at", Instant.now().toString())
                 .append("updated_at", Instant.now().toString());
 
             currencies.insertOne(doc);
-            return new Currency(newId, systemCode, displayName, Instant.parse(doc.getString("created_at")), Instant.parse(doc.getString("updated_at")));
+            return readCurrency(doc);
         });
     }
 
@@ -130,10 +139,26 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
             List<Currency> list = new ArrayList<>();
             MongoCollection<Document> currencies = database.getCollection("economy_currency");
             for (Document doc : currencies.find()) {
-                list.add(new Currency(doc.getInteger("_id"), doc.getString("system_code"), doc.getString("display_name"), Instant.parse(doc.getString("created_at")), Instant.parse(doc.getString("updated_at"))));
+                list.add(readCurrency(doc));
             }
             return list;
         });
+    }
+
+    /**
+     * Maps a {@code economy_currency} document to a {@link Currency}. Documents
+     * written before the transferable flag existed default to transferable.
+     */
+    private static Currency readCurrency(Document doc) {
+        Boolean transferable = doc.getBoolean("is_transferable");
+        return new Currency(
+            doc.getInteger("_id"),
+            doc.getString("system_code"),
+            doc.getString("display_name"),
+            transferable == null || transferable,
+            Instant.parse(doc.getString("created_at")),
+            Instant.parse(doc.getString("updated_at"))
+        );
     }
 
     @Override

@@ -48,7 +48,8 @@ public class MCEconomyMySQL implements IEconomyDatabase {
         return CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_account (account_type VARCHAR(50) NOT NULL, account_uuid VARCHAR(36) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
-                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id INT AUTO_INCREMENT PRIMARY KEY, system_code VARCHAR(50) NOT NULL UNIQUE, display_name VARCHAR(100) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)");
+                stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id INT AUTO_INCREMENT PRIMARY KEY, system_code VARCHAR(50) NOT NULL UNIQUE, display_name VARCHAR(100) NOT NULL, is_transferable BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)");
+                addTransferableColumnIfMissing(stmt);
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid VARCHAR(36) NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid VARCHAR(36) PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid VARCHAR(36) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'completed', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE)");
                 stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id BIGINT AUTO_INCREMENT PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid VARCHAR(36) NOT NULL, scope ENUM('send', 'receive', 'spend', 'donate') NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid VARCHAR(36), reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
@@ -56,6 +57,19 @@ public class MCEconomyMySQL implements IEconomyDatabase {
                 throw new RuntimeException("Failed to initialize MySQL schema", e);
             }
         });
+    }
+
+    /**
+     * Adds the {@code is_transferable} column to databases created before the
+     * column existed. MySQL has no {@code ADD COLUMN IF NOT EXISTS}, so the
+     * duplicate-column error on already-migrated schemas is swallowed.
+     */
+    private void addTransferableColumnIfMissing(Statement stmt) {
+        try {
+            stmt.execute("ALTER TABLE economy_currency ADD COLUMN is_transferable BOOLEAN NOT NULL DEFAULT TRUE");
+        } catch (SQLException e) {
+            // Column already exists.
+        }
     }
 
     @Override
@@ -98,12 +112,14 @@ public class MCEconomyMySQL implements IEconomyDatabase {
     }
 
     @Override
-    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName) {
+    public CompletableFuture<Currency> createCurrency(String systemCode, String displayName, boolean transferable) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "INSERT IGNORE INTO economy_currency (system_code, display_name) VALUES (?, ?)";
+            String sql = "INSERT INTO economy_currency (system_code, display_name, is_transferable) VALUES (?, ?, ?) "
+                    + "ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), is_transferable = VALUES(is_transferable)";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, systemCode);
                 ps.setString(2, displayName);
+                ps.setBoolean(3, transferable);
                 ps.executeUpdate();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -114,7 +130,7 @@ public class MCEconomyMySQL implements IEconomyDatabase {
                 ps.setString(1, systemCode);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"), rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+                        return readCurrency(rs);
                     }
                 }
                 throw new SQLException("Failed to fetch currency.");
@@ -131,13 +147,22 @@ public class MCEconomyMySQL implements IEconomyDatabase {
             String sql = "SELECT * FROM economy_currency";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    currencies.add(new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"), rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant()));
+                    currencies.add(readCurrency(rs));
                 }
                 return currencies;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * Maps the current {@code economy_currency} result-set row to a {@link Currency}.
+     */
+    private Currency readCurrency(ResultSet rs) throws SQLException {
+        return new Currency(rs.getInt("id"), rs.getString("system_code"), rs.getString("display_name"),
+                rs.getBoolean("is_transferable"),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
     }
 
     @Override

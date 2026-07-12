@@ -1,6 +1,7 @@
 package io.github.mcclauneck.bukkit;
 
 import io.github.mcclauneck.api.database.IEconomyDatabase;
+import io.github.mcclauneck.api.models.CurrencyDefinition;
 import io.github.mcclauneck.bukkit.listener.IdentityAccountListener;
 import io.github.mcclauneck.common.MCEconomyProvider;
 import io.github.mcclauneck.common.database.api.MCEconomyAPI;
@@ -54,8 +55,8 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         // Ensure database tables are fully created before proceeding
         database.initialize().join();
 
-        // Read the configurable currency list ("code,Display Name") from config.yml
-        Map<String, String> currencies = MCEconomyProvider.parseCurrencyList(getConfig().getStringList("currencies"));
+        // Read the configurable currency list ("code,Display Name,transferable") from config.yml
+        Map<String, CurrencyDefinition> currencies = MCEconomyProvider.parseCurrencyList(getConfig().getStringList("currencies"));
 
         // Initialize Central Economy Provider with the configured currencies
         this.provider = new MCEconomyProvider(database, currencies);
