@@ -77,10 +77,31 @@ Third-party plugins integrate with MCEconomy through the published `api`, `commo
 [`wiki/api.md`](wiki/api.md) for dependency setup, the provider method reference, and the
 Bukkit events (including how to cancel giving money to a player).
 
+## Commands
+
+Both commands are available to every player — no permission is required — and both operate on
+the player's **active MCIdentity identity**, never on the raw player account:
+
+| Command | Description |
+| --- | --- |
+| `/balance` | Opens a paged GUI showing the active identity's balance for every currency, one custom head per currency (texture configurable per currency). |
+| `/pay <player> <currency> <amount>` | Pays another player's active identity. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
+
 ## Configuration
 
-Each platform module ships a `src/main/resources/config.yml`. Set `enable: true` to activate,
-choose a `database.type`, and customize the `currencies` list.
+Each platform module ships a `src/main/resources/config.yml`. Set `enable: true` to activate
+and choose a `database.type`. Currencies are configured as a section keyed by system code:
+
+```yaml
+currencies:
+  coin:
+    display_name: Coin
+    transferable: true       # false locks the currency to the account that earned it
+    texture: <base64>        # head texture shown in the /balance GUI (optional)
+```
+
+The legacy list format (`- coin,Coin,true`) is still accepted. Gold, point, and token default
+to non-transferable.
 
 ## Versioning
 

@@ -31,7 +31,7 @@ mceconomy/
 | --- | --- | --- | --- |
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
-| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, events, and listeners, including the MCIdentity integration. |
+| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, and listeners, including the MCIdentity integration. |
 | `spigotmc` | `:platforms:spigotmc` | No | SpigotMC platform entry point (shaded jar). |
 | `papermc` | `:platforms:papermc` | No | PaperMC platform entry point (shaded jar). |
 | `foliamc` | `:platforms:foliamc` | No | FoliaMC platform entry point (shaded jar). |

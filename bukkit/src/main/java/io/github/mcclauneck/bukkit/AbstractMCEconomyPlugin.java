@@ -2,7 +2,14 @@ package io.github.mcclauneck.bukkit;
 
 import io.github.mcclauneck.api.database.IEconomyDatabase;
 import io.github.mcclauneck.api.models.CurrencyDefinition;
+import io.github.mcclauneck.bukkit.commands.BalanceCommand;
+import io.github.mcclauneck.bukkit.commands.PayCommand;
+import io.github.mcclauneck.bukkit.commands.PayTabCompleter;
+import io.github.mcclauneck.bukkit.config.CurrencyConfig;
+import io.github.mcclauneck.bukkit.gui.BalanceGuiListener;
 import io.github.mcclauneck.bukkit.listener.IdentityAccountListener;
+import io.github.mcclauneck.bukkit.scheduler.PlatformScheduler;
+import io.github.mcclauneck.bukkit.scheduler.Schedulers;
 import io.github.mcclauneck.common.MCEconomyProvider;
 import io.github.mcclauneck.common.database.api.MCEconomyAPI;
 import io.github.mcclauneck.common.database.mongodb.MCEconomyMongoDB;
@@ -11,9 +18,11 @@ import io.github.mcclauneck.common.database.postgresql.MCEconomyPostgreSQL;
 import io.github.mcclauneck.common.database.sqlite.MCEconomySQLite;
 import io.github.mcclauneck.common.http.MCEconomyHttpClient;
 
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -38,8 +47,22 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
      */
     private MCEconomyProvider provider;
 
+    /**
+     * Base64 head textures per currency system code, from the {@code currencies}
+     * section of {@code config.yml}. Used by the {@code /balance} GUI.
+     */
+    private final Map<String, String> currencyTextures = new HashMap<>();
+
+    /**
+     * Supplies the platform specific scheduler installed during {@link #onEnable()}.
+     * @return the scheduler implementation for this platform.
+     */
+    protected abstract PlatformScheduler createScheduler();
+
     @Override
     public void onEnable() {
+        Schedulers.set(createScheduler());
+
         Logger logger = getLogger();
 
         // Load default config
@@ -55,8 +78,9 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         // Ensure database tables are fully created before proceeding
         database.initialize().join();
 
-        // Read the configurable currency list ("code,Display Name,transferable") from config.yml
-        Map<String, CurrencyDefinition> currencies = MCEconomyProvider.parseCurrencyList(getConfig().getStringList("currencies"));
+        // Read the configured currencies (and their GUI head textures) from config.yml
+        Map<String, CurrencyDefinition> currencies = CurrencyConfig.parseDefinitions(getConfig());
+        this.currencyTextures.putAll(CurrencyConfig.parseTextures(getConfig()));
 
         // Initialize Central Economy Provider with the configured currencies
         this.provider = new MCEconomyProvider(database, currencies);
@@ -72,7 +96,27 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         // Give every equipped MCIdentity identity its own "identity" economy account
         getServer().getPluginManager().registerEvents(new IdentityAccountListener(this.provider, logger), this);
 
+        // The /balance GUI and /pay transfers, both bound to active identities
+        getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
+        registerCommands(logger);
+
         logger.info("MCEconomy Plugin has been successfully enabled!");
+    }
+
+    /**
+     * Wires the {@code /balance} and {@code /pay} executors declared in
+     * {@code plugin.yml}.
+     */
+    private void registerCommands(Logger logger) {
+        PluginCommand balance = getCommand("balance");
+        if (balance != null) {
+            balance.setExecutor(new BalanceCommand(this.provider, this.currencyTextures, logger));
+        }
+        PluginCommand pay = getCommand("pay");
+        if (pay != null) {
+            pay.setExecutor(new PayCommand(this.provider, logger));
+            pay.setTabCompleter(new PayTabCompleter(this.provider));
+        }
     }
 
     /**

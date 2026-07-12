@@ -9,7 +9,8 @@ plugin. It wires the shared modules together into a single distributable, shaded
 ## Runtime flow
 
 The entry point is a thin subclass of the shared `AbstractMCEconomyPlugin` (from the
-`bukkit` module). On `onEnable`, the shared bootstrap:
+`bukkit` module) that supplies this platform's scheduler implementation. On `onEnable`,
+the shared bootstrap installs that scheduler, then:
 
 1. Loads `config.yml` and bails out early if `enable: false`.
 2. Constructs the configured `IEconomyDatabase` (SQLite by default) and calls `initialize()`.
@@ -20,6 +21,8 @@ The entry point is a thin subclass of the shared `AbstractMCEconomyPlugin` (from
 6. Registers `IdentityAccountListener` so every equipped MCIdentity identity gets its own
    `identity` economy account, keyed by the identity UUID. The plugin listens to MCIdentity
    events only — there are no raw player listeners.
+7. Registers the `/balance` GUI (with its click listener) and the `/pay` command, both
+   bound to the sender's active identity.
 
 All database operations are asynchronous and never block the main server thread. Follow the
 standard SpigotMC scheduling conventions.
