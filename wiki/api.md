@@ -17,6 +17,7 @@ See [§4](#4-architecture--bind-money-to-the-identity-not-the-player).
 2. [API Usage](#2-api-usage)
 3. [Bukkit Integration](#3-bukkit-integration)
 4. [Architecture — bind money to the identity, not the player](#4-architecture--bind-money-to-the-identity-not-the-player)
+5. [Custom account types — clan, guild, and beyond](#5-custom-account-types--clan-guild-and-beyond)
 
 ---
 
@@ -112,26 +113,23 @@ or the remote central API).
 ### 2.1 Obtain the provider
 
 MCEconomy holds one `MCEconomyProvider` per server, exposed by the plugin's main
-class through `getProvider()`. Because the main class is platform-specific
-(SpigotMC, PaperMC, and Folia each ship their own `MCEconomyPlugin`), the
-portable way to reach it is by plugin name plus a reflective `getProvider()`
-call:
+class through `getProvider()`. Every platform entry point (SpigotMC, PaperMC,
+and Folia) extends the shared
+`io.github.mcclauneck.bukkit.AbstractMCEconomyPlugin` base from the published
+`bukkit` module, so the portable way to reach the provider is a simple cast:
 
 ```java
+import io.github.mcclauneck.bukkit.AbstractMCEconomyPlugin;
 import io.github.mcclauneck.common.MCEconomyProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 MCEconomyProvider economy() {
     Plugin plugin = Bukkit.getPluginManager().getPlugin("MCEconomy");
-    if (plugin == null || !plugin.isEnabled()) {
+    if (!(plugin instanceof AbstractMCEconomyPlugin economyPlugin) || !plugin.isEnabled()) {
         return null;                       // MCEconomy is not ready yet
     }
-    try {
-        return (MCEconomyProvider) plugin.getClass().getMethod("getProvider").invoke(plugin);
-    } catch (ReflectiveOperationException e) {
-        throw new IllegalStateException("MCEconomy present but getProvider() missing", e);
-    }
+    return economyPlugin.getProvider();
 }
 ```
 
@@ -308,7 +306,7 @@ economy().transferBalance(
 <details>
 <summary><code>loadCurrencies()</code> / <code>ensureDefaultCurrencies()</code></summary>
 
-- **Description**: Refresh the in-memory currency cache from the database, and create any configured currencies that are missing. Normally called by the plugin on enable and on player join.
+- **Description**: Refresh the in-memory currency cache from the database, and create any configured currencies that are missing. Normally called by the plugin on enable.
 - **Return Type**: `CompletableFuture<Void>`
 </details>
 
@@ -488,3 +486,114 @@ Resolve the active identity UUID with
 `event.getIdentityUuid()` from the MCIdentity equip/unequip events), and use that
 UUID for **all** of your economy calls. For the full MCIdentity integration
 guide, see its own [`wiki/api.md`](https://github.com/MCOriax/mcidentity).
+
+---
+
+## 5. Custom account types — clan, guild, and beyond
+
+An economy account is keyed by an *account type* + *account UUID* pair, and the
+account type is **free-form**. MCEconomy itself only uses
+`AccountTypes.IDENTITY` (`"identity"`), so any other plugin can pick its own
+type string and instantly get a fully separate money space for its own entities
+— no schema change and no extra plugin required.
+
+Pick one stable, lower-case type per entity kind and always key by the entity's
+own UUID:
+
+| Plugin | Account type | Account UUID |
+| --- | --- | --- |
+| MCEconomy (built-in) | `"identity"` | The MCIdentity identity UUID |
+| A clan plugin | `"clan"` | The clan UUID |
+| A guild plugin | `"guild"` | The guild UUID |
+
+Because the pair is the key, a clan's wallets never collide with a guild's or an
+identity's — **each clan and each guild has its own accounts, wallets, and
+transaction logs**, exactly like each identity does.
+
+### 5.1 Example — a clan treasury
+
+A clan plugin can hold a clan-wide treasury on the **clan UUID** under its own
+`"clan"` account type. Members deposit from their identity wallet into the clan
+wallet with a single `transferBalance` call, which debits and credits atomically
+and writes both log rows:
+
+```java
+import io.github.mcclauneck.api.models.AccountTypes;
+import io.github.mcclauneck.api.models.Currency;
+import java.util.UUID;
+
+public class ClanTreasuryService {
+
+    /** Account type owned by the clan plugin. */
+    public static final String ACCOUNT_TYPE_CLAN = "clan";
+
+    private final MCEconomyProvider economy;
+
+    public ClanTreasuryService(MCEconomyProvider economy) {
+        this.economy = economy;
+    }
+
+    /** Create the treasury account when the clan is founded (idempotent). */
+    public void onClanCreated(UUID clanUuid) {
+        economy.createAccount(ACCOUNT_TYPE_CLAN, clanUuid);
+    }
+
+    /** Move money from a member's identity wallet into the clan treasury. */
+    public void deposit(UUID identityUuid, UUID clanUuid, Currency coin, long amount) {
+        economy.transferBalance(
+                AccountTypes.IDENTITY, identityUuid,   // from: the member's identity
+                ACCOUNT_TYPE_CLAN, clanUuid,           // to:   the clan treasury
+                coin, amount, UUID.randomUUID(), "clan_treasury", "deposit");
+    }
+
+    /** Read the treasury balance, e.g. for a clan info screen. */
+    public void showBalance(UUID clanUuid, Currency coin) {
+        economy.getBalance(ACCOUNT_TYPE_CLAN, clanUuid, coin)
+               .thenAccept(balance -> { /* display it */ });
+    }
+}
+```
+
+### 5.2 Example — guild upkeep
+
+A guild plugin works the same way with its own `"guild"` type — for example a
+weekly upkeep charge taken straight from the guild's account:
+
+```java
+import io.github.mcclauneck.api.models.Currency;
+import io.github.mcclauneck.api.models.LogScope;
+import java.util.UUID;
+
+public class GuildUpkeepService {
+
+    /** Account type owned by the guild plugin. */
+    public static final String ACCOUNT_TYPE_GUILD = "guild";
+
+    private final MCEconomyProvider economy;
+
+    public GuildUpkeepService(MCEconomyProvider economy) {
+        this.economy = economy;
+    }
+
+    /** Charge the weekly upkeep; disband logic runs when funds are short. */
+    public void chargeUpkeep(UUID guildUuid, Currency gold, long upkeep) {
+        economy.removeBalance(ACCOUNT_TYPE_GUILD, guildUuid, gold, upkeep,
+                LogScope.SPEND, UUID.randomUUID(), "guild_upkeep", "weekly")
+               .exceptionally(err -> {
+                   // "Insufficient funds" — flag the guild as behind on upkeep.
+                   return null;
+               });
+    }
+}
+```
+
+**Rules for custom account types:**
+
+1. Choose one stable, lower-case account type per entity kind (`"clan"`,
+   `"guild"`, `"town"`, ...) and never reuse another plugin's type for your own
+   entities.
+2. Key by the entity's own UUID. Do not key clan or guild money by a player or
+   identity UUID — members change, the entity stays.
+3. Keep using a fresh transaction UUID and a descriptive
+   `referenceType`/`referenceId` pair on every mutating call so the shared
+   `economy_logs` audit trail stays meaningful.
