@@ -13,7 +13,7 @@ All modules share the group `io.github.mcclauneck` and one Semantic Version
 | Module | Gradle path | Published | Description |
 | --- | --- | --- | --- |
 | [`api`](api) | `:api` | **`io.github.mcclauneck:api`** | Pure-Java data contracts and immutable models. No platform or database dependencies. |
-| [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/API database backends. |
+| [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/central database backends. |
 | [`bukkit`](bukkit) | `:bukkit` | **`io.github.mcclauneck:bukkit`** | Shared Bukkit events and listeners, reused by every platform. |
 | [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; produces the shaded distributable jar. |
 | [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; produces the shaded distributable jar. |

@@ -38,33 +38,36 @@ currencies:
     transferable: false
     texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWQ5Y2M1OGFkMjVhMWFiMTZkMzZiYjVkNmQ0OTNjOGY1ODk4YzJiZjMwMmI2NGUzMjU5MjFjNDFjMzU4NjcifX19
 
+# Economy data storage backend.
+# type: sqlite (default, zero configuration local file), mysql, postgresql,
+# mongodb, or central (the MCEconomy central REST server configured below).
 database:
-  # Options: sqlite, postgresql, mysql, mongodb, api
   type: "sqlite"
-  
   sqlite:
+    # File name inside the plugin data folder
     file: "economy.db"
-    
-  postgresql:
-    host: "localhost"
-    port: 5432
-    database: "economy"
-    username: "postgres"
-    password: "password"
-    
   mysql:
     host: "localhost"
     port: 3306
     database: "economy"
     username: "root"
     password: "password"
-    
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "economy"
+    username: "postgres"
+    password: "password"
   mongodb:
     uri: "mongodb://localhost:27017"
     database: "economy"
 
-  # Remote central API backend (MCEngine server-expressjs).
-  # Forwards all economy operations to the server over HTTP.
-  api:
-    url: "http://localhost:3000"
-    token: "your-api-token"
+# Central server owning all economy data, used when database.type is
+# "central". Every game server on the network points at the same deployment.
+central_server:
+  # Base URL of the central server (no trailing slash)
+  url: "https://server.com"
+  # Bearer token matching the central server SERVER_API_TOKEN value
+  token: ""
+  # HTTP request timeout in seconds
+  timeout_seconds: 10
