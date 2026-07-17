@@ -29,9 +29,9 @@ public class BalanceGuiListener implements Listener {
         if (event.getClickedInventory() != event.getInventory()) {
             return;
         }
-        if (event.getSlot() == BalanceGui.PREVIOUS_SLOT && holder.getPage() > 0) {
+        if (event.getSlot() == holder.getPreviousSlot() && holder.getPage() > 0) {
             BalanceGui.open(player, holder.getEntries(), holder.getPage() - 1);
-        } else if (event.getSlot() == BalanceGui.NEXT_SLOT
+        } else if (event.getSlot() == holder.getNextSlot()
                 && holder.getPage() < BalanceGui.pageCount(holder.getEntries().size()) - 1) {
             BalanceGui.open(player, holder.getEntries(), holder.getPage() + 1);
         }
