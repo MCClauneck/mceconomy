@@ -27,12 +27,16 @@ currencies:
     texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTdlZmY3Zjc5YjFkNzQxMzJhNWYzY2U4NjE3MmUwMzdiNGY2MjM3NDliMDc2M2RlYjZmNjdhZjIzN2M3N2Q0MyJ9fX0=
   gold:
     display_name: Gold
-    transferable: false
+    transferable: true
     texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2U4MDI4NjFjOWM2Yzg5NGQxOGExZmUyZTIzOGQ2OTA4NTQ2OGNjODc1N2UxMzU3NTY0YmJhOTdlMDY3ZmVkMCJ9fX0=
   point:
     display_name: Point
     transferable: false
     texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjM4YzUzZTY2ZjI4Y2YyYzdmYjE1MjNjOWU1ZGUxYWUwY2Y0ZDdhMWZhZjU1M2U3NTI0OTRhOGQ2ZDJlMzIifX19
+  credit:
+    display_name: Credit
+    transferable: false
+    texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjI2ODExNTI0NDdhM2RiZDc1ODQxYTk2ZTNmN2FjNTJhODhjMDcxNWM4NzdjZWE0YmVjZDliNWQwMzgwZGM4NiJ9fX0=
   token:
     display_name: Token
     transferable: false
