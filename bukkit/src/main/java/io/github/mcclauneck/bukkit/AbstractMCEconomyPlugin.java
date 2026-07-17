@@ -11,7 +11,7 @@ import io.github.mcclauneck.bukkit.listener.IdentityAccountListener;
 import io.github.mcclauneck.bukkit.scheduler.PlatformScheduler;
 import io.github.mcclauneck.bukkit.scheduler.Schedulers;
 import io.github.mcclauneck.common.MCEconomyProvider;
-import io.github.mcclauneck.common.database.api.MCEconomyAPI;
+import io.github.mcclauneck.common.central.MCEconomyAPI;
 import io.github.mcclauneck.common.database.mongodb.MCEconomyMongoDB;
 import io.github.mcclauneck.common.database.mysql.MCEconomyMySQL;
 import io.github.mcclauneck.common.database.postgresql.MCEconomyPostgreSQL;
@@ -121,7 +121,7 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
 
     /**
      * Builds the storage backend selected by {@code database.type} in config.yml —
-     * SQLite (the default), MySQL, PostgreSQL, MongoDB, or the remote central API.
+     * SQLite (the default), MySQL, PostgreSQL, MongoDB, or the central server.
      *
      * @param logger The plugin logger used to report the chosen backend.
      * @return The configured database.
@@ -148,11 +148,12 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
                     getConfig().getString("database.mysql.username"),
                     getConfig().getString("database.mysql.password")
                 );
-            case "api":
-                logger.info("Initializing Remote API Database...");
+            case "central":
+                logger.info("Initializing Central Server Database...");
                 return new MCEconomyAPI(
-                    getConfig().getString("database.api.url"),
-                    getConfig().getString("database.api.token")
+                    getConfig().getString("central_server.url"),
+                    getConfig().getString("central_server.token"),
+                    getConfig().getInt("central_server.timeout_seconds")
                 );
             case "mongodb":
                 logger.info("Initializing MongoDB Database...");

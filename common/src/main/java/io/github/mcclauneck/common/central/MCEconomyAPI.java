@@ -1,4 +1,4 @@
-package io.github.mcclauneck.common.database.api;
+package io.github.mcclauneck.common.central;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -37,17 +37,20 @@ public class MCEconomyAPI implements IEconomyDatabase {
     private final HttpClient httpClient;
     private final URI endpoint;
     private final String apiToken;
+    private final Duration requestTimeout;
 
     /**
-     * Constructs the remote API backend.
+     * Constructs the central server backend.
      *
-     * @param baseUrl  The base URL of the central server (e.g. {@code https://api.example.com}).
-     * @param apiToken The Bearer token used to authenticate against the server.
+     * @param baseUrl        The base URL of the central server (e.g. {@code https://server.com}).
+     * @param apiToken       The Bearer token used to authenticate against the server.
+     * @param timeoutSeconds The per-request HTTP timeout, in seconds.
      */
-    public MCEconomyAPI(String baseUrl, String apiToken) {
+    public MCEconomyAPI(String baseUrl, String apiToken, int timeoutSeconds) {
         String normalized = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.endpoint = URI.create(normalized + "/api/economy");
         this.apiToken = apiToken;
+        this.requestTimeout = Duration.ofSeconds(timeoutSeconds);
         // Reuse the plugin-wide shared client so the core backend and every
         // extension share a single connection pool.
         this.httpClient = MCEconomyHttpClient.shared();
@@ -61,7 +64,7 @@ public class MCEconomyAPI implements IEconomyDatabase {
      */
     private CompletableFuture<JsonObject> post(JsonObject body) {
         HttpRequest request = HttpRequest.newBuilder(endpoint)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(requestTimeout)
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiToken)
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))

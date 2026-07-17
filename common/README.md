@@ -16,8 +16,8 @@ strictly responsible for **getting and setting data from the database**.
 | `database/mysql` | MySQL implementation. |
 | `database/postgresql` | PostgreSQL implementation. |
 | `database/mongodb` | MongoDB implementation. |
-| `database/api` | Remote central API backend (MCEngine server-expressjs) over HTTP. |
-| `http/MCEconomyHttpClient` | Lightweight HTTP client used by the API backend. |
+| `central` | Remote central server backend (MCEngine server-expressjs) over HTTP. |
+| `http/MCEconomyHttpClient` | Lightweight HTTP client used by the central backend. |
 
 All database operations are asynchronous and return `CompletableFuture`s, so they never block
 the server thread.
