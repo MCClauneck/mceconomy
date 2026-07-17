@@ -1,0 +1,59 @@
+# System Architecture
+
+MCEconomy is a consolidated monorepo that merges six formerly separate repositories into one
+Gradle multi module build. One shared implementation backs SpigotMC, PaperMC, and Folia, and
+each platform ships a thin entry point that shades the shared modules into a single plugin jar.
+
+## Modules
+
+| Module | Gradle path | Published | Responsibility |
+| --- | --- | --- | --- |
+| `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure Java data contracts and immutable models, including the `AccountTypes` constants. No platform or database dependencies. |
+| `common` | `:common` | Yes (`io.github.mcclauneck:common`) | The central `MCEconomyProvider` and the SQLite, MySQL, PostgreSQL, MongoDB, and central database backends. |
+| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit layer: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, and the MCIdentity events and listeners. |
+| `platforms/spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; shades the shared modules into the distributable jar. |
+| `platforms/papermc` | `:platforms:papermc` | No | PaperMC entry point; shades the shared modules into the distributable jar. |
+| `platforms/foliamc` | `:platforms:foliamc` | No | Folia entry point; installs the region aware scheduler and shades the shared modules into the distributable jar. |
+
+Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
+Modules reference each other with Gradle `project(':...')` references, so one build compiles the
+whole project with no intermediate publishing step. Each library declares its own dependencies
+`compileOnly`, so the platform modules are the single place that shades `api`, `common`, and
+`bukkit` into the distributable jar.
+
+## Platform abstraction
+
+The `bukkit` module compiles against the plain Spigot API, the common denominator across all
+three platforms, and hides scheduling differences behind a scheduler abstraction. Spigot and
+Paper use the classic Bukkit scheduler; Folia uses a region aware scheduler. Inventory and
+player operations are always dispatched to the thread that owns the player, so the same GUI and
+listener code is safe on every platform.
+
+## MCIdentity integration
+
+Each MCIdentity identity is a fully separate character, so economy data is bound to the identity
+UUID, never the base player UUID. When a player equips an identity, the shared
+`IdentityAccountListener` ensures an economy account exists for that identity using account type
+`identity` (`AccountTypes.IDENTITY`). The MCIdentity artifacts (`io.github.mcoriax:api`,
+`common`, `bukkit`) are consumed `compileOnly` from the MCIdentity GitHub Packages registry;
+the plugin provides the classes at runtime, so nothing is shaded.
+
+## Accounts, wallets, and logging
+
+The `MCEconomyProvider` is the central entry point for balance operations: adding, removing,
+and setting balances, and transferring between accounts. Amounts are validated (no negatives,
+no overdrafts) and every change writes log rows. A transfer debits the sender with a `SEND`
+entry and credits the receiver with a `RECEIVE` entry, plus a transaction receipt, and is
+rejected when the currency is not transferable. Currencies are configured per platform
+`config.yml`, keyed by system code, each with a display name, a transferable flag, and an
+optional head texture.
+
+## Balance GUI
+
+The `/balance` command builds a paged inventory, one custom head per currency. The inventory
+height is derived from the currencies on the current page: one content row for every nine
+currencies, plus a navigation row only when the currencies span more than one page. Leftover
+content slots and the navigation row are padded with a black glass pane whose tooltip is hidden,
+so the filler shows no hover text. Because the navigation row moves with the inventory height,
+the previous and next arrow slots are stored on the inventory holder and read back by the click
+listener, which cancels every interaction and repaginates on an arrow click.

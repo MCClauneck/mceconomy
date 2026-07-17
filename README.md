@@ -8,6 +8,12 @@ Gradle multi-module build.
 All modules share the group `io.github.mcclauneck` and one Semantic Version
 (`Major.Minor.Patch`), defined once in [`gradle.properties`](gradle.properties).
 
+## Project Overview
+
+* **Platform:** [github.com](https://github.com)
+* **Organization:** [MCClauneck](https://github.com/MCClauneck)
+* **Repository:** [mceconomy](https://github.com/MCClauneck/mceconomy)
+
 ## Modules
 
 | Module | Gradle path | Published | Description |
@@ -84,7 +90,7 @@ the player's **active MCIdentity identity**, never on the raw player account:
 
 | Command | Description |
 | --- | --- |
-| `/balance` | Opens a paged GUI showing the active identity's balance for every currency, one custom head per currency (texture configurable per currency). |
+| `/balance` | Opens a paged GUI showing the active identity's balance for every currency, one custom head per currency (texture configurable per currency). The window sizes itself to the currencies on the page, growing one row for every nine currencies and padding leftover slots with a black glass pane. |
 | `/pay <player> <currency> <amount>` | Pays another player's active identity. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
 
 ## Configuration
@@ -124,6 +130,15 @@ source of truth for every module.
   artifacts) and publishing `api`/`common` require GitHub Packages credentials with the
   `read:packages`/`write:packages` scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI),
   then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+
+## Documentation
+
+Detailed documentation lives in the [`wiki/`](wiki/) directory:
+
+- [`wiki/requirements.md`](wiki/requirements.md) — functional and non functional requirements.
+- [`wiki/api.md`](wiki/api.md) — developer API guide for third party plugins.
+- [`wiki/environment.md`](wiki/environment.md) — build and publish environment variables and infrastructure examples.
+- [`wiki/system.md`](wiki/system.md) — system architecture and runtime behavior.
 
 ## License
 

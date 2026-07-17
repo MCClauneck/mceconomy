@@ -47,9 +47,13 @@ type `identity` to equipped identities; every platform `plugin.yml` declares
 
 ## Documentation
 
-| Directory | Purpose |
+| Directory / File | Purpose |
 |---|---|
-| [`wiki/`](wiki/) | Human-facing documentation. `api.md` is the developer API guide for third-party plugins integrating with MCEconomy (covers the `api`, `common`, and `bukkit` modules, with a cancel-give-money event example). |
+| [`wiki/`](wiki/) | Human-facing documentation root. |
+| [`wiki/requirements.md`](wiki/requirements.md) | Functional and non functional requirements. |
+| [`wiki/api.md`](wiki/api.md) | Developer API guide for third-party plugins integrating with MCEconomy (covers the `api`, `common`, and `bukkit` modules, with a cancel-give-money event example). |
+| [`wiki/environment.md`](wiki/environment.md) | Build and publish environment variables and infrastructure examples. |
+| [`wiki/system.md`](wiki/system.md) | System architecture and runtime behavior. |
 
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
