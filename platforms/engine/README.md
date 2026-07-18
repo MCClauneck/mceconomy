@@ -54,7 +54,7 @@ From the repository root:
 ```bash
 ./gradlew :platforms:engine:build          # produces the universal plugin jar
 ./gradlew :platforms:engine:shadowJar      # the universal jar only
-./gradlew :platforms:engine:exportJar      # also copies the jar to $ENGINE_PLUGIN_JAR_PATH if set
+./gradlew :platforms:engine:exportJar      # copies the jar to the root build/ dir (and $ENGINE_PLUGIN_JAR_PATH if set)
 ```
 
 The build uses the Gradle wrapper and targets a **Java 25** toolchain.

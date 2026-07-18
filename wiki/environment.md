@@ -22,8 +22,9 @@ export GITHUB_TOKEN=your_github_token
 ## Optional jar export path
 
 The `engine` module exposes an `exportJar` task that copies the freshly built universal plugin
-jar to a local path, for example a test server `plugins/` folder. The path is optional; when
-unset the export step is skipped.
+jar to the repository root `build/` directory, and additionally to a local path — for example a
+test server `plugins/` folder — when one is set. The local path is optional; when unset, only
+the root `build/` copy is made.
 
 ```bash
 # Copy the built universal jar to this path after a build.
