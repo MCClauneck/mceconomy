@@ -92,12 +92,12 @@ tasks.register('exportJar') {
 
     // Capture values at configuration time to support Configuration Cache
     def exportPath = System.getenv("ENGINE_PLUGIN_JAR_PATH")
-    def projectName = project.name
+    def projectName = rootProject.name
     def shadowJarFile = shadowJar.archiveFile
-    def rootBuildDir = project.layout.buildDirectory.get().asFile
+    def rootBuildDir = rootProject.layout.buildDirectory.get().asFile
 
     doLast {
-        // Export to project build directory
+        // Export to root build directory
         if (!rootBuildDir.exists()) {
             rootBuildDir.mkdirs()
         }
@@ -109,7 +109,7 @@ tasks.register('exportJar') {
             rootTargetFile.toPath(),
             java.nio.file.StandardCopyOption.REPLACE_EXISTING
         )
-        println "Exported ${sourceFile.name} to build directory"
+        println "Exported ${sourceFile.name} to root build directory"
 
         // Export to local test server path if environment variable is provided
         if (exportPath != null && !exportPath.isEmpty()) {

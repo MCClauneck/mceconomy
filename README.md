@@ -38,13 +38,13 @@ The project uses the Gradle wrapper.
 ./gradlew build                          # build every module
 ./gradlew :platforms:engine:build        # build the universal jar
 ./gradlew :platforms:engine:shadowJar    # produce just the shaded universal jar
-./gradlew :platforms:engine:exportJar    # copy the jar to $ENGINE_PLUGIN_JAR_PATH if set
+./gradlew :platforms:engine:exportJar    # copy the jar to the root build/ dir (and $ENGINE_PLUGIN_JAR_PATH if set)
 ```
 
 The `engine` module produces the single distributable, shaded plugin jar
 (`MCEconomy-<version>.jar`) that runs on SpigotMC, PaperMC, and Folia — the server is detected
-at enable time. It accepts `ENGINE_PLUGIN_JAR_PATH` to copy the built jar to a local test
-server. The `spigotmc`, `papermc`, and `foliamc` modules still build thin per-platform jars,
+at enable time. Its `exportJar` task copies the built jar to the repository root `build/` directory, and
+also to `ENGINE_PLUGIN_JAR_PATH` when that points at a local test server. The `spigotmc`, `papermc`, and `foliamc` modules still build thin per-platform jars,
 which the engine bundles.
 
 ## Publishing
