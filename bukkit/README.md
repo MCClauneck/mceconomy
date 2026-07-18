@@ -36,18 +36,18 @@ creates that identity's economy account with the account type `identity`
 This keeps wallets and transaction logs separate per identity.
 
 The MCIdentity artifacts are `compileOnly`: the MCIdentity plugin provides the classes on
-the server at runtime, so nothing is shaded into the distributable jars.
+the server at runtime, so nothing is shaded into the distributed jar.
 
 ## Dependencies
 
-All dependencies are `compileOnly`: the platform modules shade `api`, `common`, and `bukkit`
-into the distributable jar, so this module never bundles them itself.
+All dependencies are `compileOnly`: the `engine` module shades `api`, `common`, and `bukkit`
+into the single distributed jar, so this module never bundles them itself.
 
 - [`api`](../api) — `compileOnly` (via `project(':api')`).
 - [`common`](../common) — `compileOnly` (via `project(':common')`).
 - `org.spigotmc:spigot-api` — `compileOnly` (provided by the server).
 - `io.github.mcoriax:api` / `io.github.mcoriax:common` / `io.github.mcoriax:bukkit`
-  (MCIdentity `1.0.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
+  (MCIdentity `1.1.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
   registry (provided by the MCIdentity plugin at runtime).
 
 ## Building
@@ -61,8 +61,7 @@ From the repository root:
 
 GitHub Packages always requires authentication, even for public packages, so building and
 publishing this module needs credentials with the `read:packages` (build) and `write:packages`
-(publish) scopes. They are resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI), then
-`AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+(publish) scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN`.
 
 ## Related modules
 

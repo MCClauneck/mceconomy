@@ -1,0 +1,23 @@
+name: ${name}
+version: ${version}
+main: io.github.mcclauneck.engine.MCEconomyEnginePlugin
+
+api-version: '1.20'
+folia-supported: true
+author: MCClauneck
+description: A universal plugin for SpigotMC, PaperMC, and FoliaMC
+
+depend: [MCIdentity]
+
+commands:
+  balance:
+    description: Open the balance GUI for your active identity.
+    usage: /balance
+  pay:
+    description: Pay another player's active identity.
+    usage: /pay <player> <currency> <amount>
+
+libraries:
+  - org.xerial:sqlite-jdbc:3.53.0.0
+  - com.zaxxer:HikariCP:7.0.2
+  - org.mongodb:mongodb-driver-sync:5.7.0

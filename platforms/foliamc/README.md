@@ -1,11 +1,12 @@
 # MCEconomy FoliaMC (`foliamc`)
 
 The **FoliaMC** platform entry point for the **MCEconomy** multi-platform Minecraft economy
-plugin. It wires the shared modules together into a single distributable, shaded jar and uses
-Folia's region/async schedulers.
+plugin. It supplies the region-aware Folia scheduler and builds a thin jar that the universal
+[`engine`](../engine) module bundles into the single distributed jar.
 
-> The `foliamc` module of the [MCEconomy monorepo](../../README.md). It produces a terminal
-> distributable jar and is **not published**.
+> The `foliamc` module of the [MCEconomy monorepo](../../README.md). It builds a thin,
+> per-platform jar (entry point + Folia scheduler) that the [`engine`](../engine) module
+> bundles, and is **not published**.
 
 ## Runtime flow
 
@@ -30,8 +31,8 @@ model and schedulers.
 
 ## Dependencies
 
-- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
-  (via `project(':...')`).
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules,
+  `compileOnly` (via `project(':...')`); the `engine` module shades them into the distributed jar.
 - `dev.folia:folia-api` — `compileOnly`.
 - **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the
   plugin must be installed on the server.
@@ -41,9 +42,9 @@ model and schedulers.
 From the repository root:
 
 ```bash
-./gradlew :platforms:foliamc:build          # produces the shaded plugin jar
-./gradlew :platforms:foliamc:shadowJar      # the distributable jar only
-./gradlew :platforms:foliamc:exportJar      # also copies the jar to $FOLIAMC_PLUGIN_JAR_PATH if set
+./gradlew :platforms:foliamc:build          # produces the thin per-platform jar
+./gradlew :platforms:foliamc:shadowJar      # the thin jar only (bundled by the engine)
+./gradlew :platforms:engine:build           # build the single universal jar
 ```
 
 The build uses the Gradle wrapper and targets a **Java 25** toolchain.

@@ -11,35 +11,23 @@ GitHub Packages authentication is required to resolve the MCIdentity `compileOnl
 (building the `bukkit` module) and to publish the `api`, `common`, and `bukkit` libraries. The
 token needs the `read:packages` scope to build and `write:packages` to publish.
 
-The `bukkit` module resolves the credentials from the first pair that is set, in this order:
+The `bukkit` module and publishing from the root build both resolve the credentials from
+`GITHUB_ACTOR` and `GITHUB_TOKEN`:
 
 ```bash
-# Preferred (also used by CI):
 export GITHUB_ACTOR=your_github_username
 export GITHUB_TOKEN=your_github_token
-
-# First fallback:
-export AGENT_GITHUB_NAME=your_github_username
-export AGENT_GITHUB_TOKEN=your_github_token
-
-# Second fallback:
-export USER_GITHUB_NAME=your_github_username
-export USER_GITHUB_TOKEN=your_github_token
 ```
 
-Publishing from the root build reads `GITHUB_ACTOR` and `GITHUB_TOKEN`.
+## Optional jar export path
 
-## Optional jar export paths
-
-Each platform module exposes an `exportJar` task that copies the freshly built, shaded plugin
-jar to a local path, for example a test server `plugins/` folder. Each path is optional; when
+The `engine` module exposes an `exportJar` task that copies the freshly built universal plugin
+jar to a local path, for example a test server `plugins/` folder. The path is optional; when
 unset the export step is skipped.
 
 ```bash
-# Copy the built jar for the matching platform to this path after a build.
-export SPIGOTMC_PLUGIN_JAR_PATH=your_spigot_server_plugins_path
-export PAPERMC_PLUGIN_JAR_PATH=your_paper_server_plugins_path
-export FOLIAMC_PLUGIN_JAR_PATH=your_folia_server_plugins_path
+# Copy the built universal jar to this path after a build.
+export ENGINE_PLUGIN_JAR_PATH=your_server_plugins_path
 ```
 
 ## External database examples
