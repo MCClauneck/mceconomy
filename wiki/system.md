@@ -11,15 +11,17 @@ each platform ships a thin entry point that shades the shared modules into a sin
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure Java data contracts and immutable models, including the `AccountTypes` constants. No platform or database dependencies. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | The central `MCEconomyProvider` and the SQLite, MySQL, PostgreSQL, MongoDB, and central database backends. |
 | `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit layer: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, and the MCIdentity events and listeners. |
-| `platforms/spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; shades the shared modules into the distributable jar. |
-| `platforms/papermc` | `:platforms:papermc` | No | PaperMC entry point; shades the shared modules into the distributable jar. |
-| `platforms/foliamc` | `:platforms:foliamc` | No | Folia entry point; installs the region aware scheduler and shades the shared modules into the distributable jar. |
+| `platforms/spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
+| `platforms/papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
+| `platforms/foliamc` | `:platforms:foliamc` | No | Folia entry point and region aware scheduler; bundled into the engine jar. |
+| `platforms/engine` | `:platforms:engine` | No | Universal central loader; the single distributed jar that detects SpigotMC, PaperMC, or Folia at enable time and installs the matching scheduler. |
 
-Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
+Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` } ← `engine`.
 Modules reference each other with Gradle `project(':...')` references, so one build compiles the
-whole project with no intermediate publishing step. Each library declares its own dependencies
-`compileOnly`, so the platform modules are the single place that shades `api`, `common`, and
-`bukkit` into the distributable jar.
+whole project with no intermediate publishing step. The `engine` module is the single place that
+shades `api`, `common`, and `bukkit` into the one universal distributable jar; the per-platform
+modules reference the shared modules `compileOnly` and ship only their own entry point classes,
+which the engine bundles.
 
 ## Platform abstraction
 
@@ -28,6 +30,12 @@ three platforms, and hides scheduling differences behind a scheduler abstraction
 Paper use the classic Bukkit scheduler; Folia uses a region aware scheduler. Inventory and
 player operations are always dispatched to the thread that owns the player, so the same GUI and
 listener code is safe on every platform.
+
+The universal `engine` jar chooses the scheduler at runtime. At enable time it probes for classes
+unique to each server — Folia's `RegionizedServer`, then Paper's `PaperConfig` — and falls back to
+Spigot, installing the region aware Folia scheduler on Folia and the classic Bukkit scheduler on
+Spigot and Paper. Detection is purely reflective, so the engine compiles against the Folia API
+alone, the superset of the Bukkit, Paper, and Folia types the schedulers use.
 
 ## MCIdentity integration
 

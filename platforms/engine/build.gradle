@@ -1,0 +1,143 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow'
+}
+
+repositories {
+    // mavenCentral and the Java toolchain are provided by the root build.
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+}
+
+dependencies {
+    // The engine is the single, universal jar. It shades the shared modules
+    // exactly once and bundles the thin per-platform jars for their entry points
+    // and the Folia scheduler.
+    implementation project(':api')
+    implementation project(':common')
+    implementation project(':bukkit')
+    implementation project(':platforms:spigotmc')
+    implementation project(':platforms:papermc')
+    implementation project(':platforms:foliamc')
+
+    compileOnly 'org.xerial:sqlite-jdbc:3.53.0.0'
+
+    // Compile against the Folia API ONLY. spigot-api, paper-api, and folia-api all
+    // declare the same 'org.spigotmc:spigot-api' Gradle capability and are mutually
+    // exclusive on one classpath. Folia is the superset (built on Paper, built on
+    // Spigot) and provides every Bukkit/Paper/Folia type the bundled schedulers
+    // reference. Platform detection uses reflection strings, so no compile-time
+    // Spigot/Paper dependency is needed.
+    compileOnly 'dev.folia:folia-api:26.1.2.build.+'
+}
+
+jar {
+    enabled = false
+}
+
+// Disable Gradle Module Metadata generation to ensure consumers pull the shadow jar
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+}
+
+// captured at configuration time so the rule below closes over a String,
+// not the project (configuration-cache safe)
+def ownResourcesDir = sourceSets.main.output.resourcesDir.absolutePath
+
+// The platform modules disable their thin jar in favour of a shadowJar written
+// to the same path; make sure those exist before this module compiles against
+// and bundles them.
+['spigotmc', 'papermc', 'foliamc'].each { platform ->
+    tasks.named('compileJava') { dependsOn ":platforms:${platform}:shadowJar" }
+    tasks.named('shadowJar')   { dependsOn ":platforms:${platform}:shadowJar" }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+    configurations = [project.configurations.runtimeClasspath]
+
+    // Keep only the engine's own plugin.yml; drop every copy bundled from a
+    // dependency jar so the universal jar has a single, authoritative descriptor.
+    filesMatching('plugin.yml') {
+        if (!it.file.absolutePath.startsWith(ownResourcesDir)) {
+            it.exclude()
+        }
+    }
+}
+
+processResources {
+    def props = [
+        version: project.version,
+        group: project.group,
+        name: 'MCEconomy'
+    ]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+base {
+    archivesName = "MCEconomy"
+}
+
+build.dependsOn shadowJar
+
+tasks.register('exportJar') {
+    dependsOn shadowJar
+
+    // Capture values at configuration time to support Configuration Cache
+    def exportPath = System.getenv("ENGINE_PLUGIN_JAR_PATH")
+    def projectName = project.name
+    def shadowJarFile = shadowJar.archiveFile
+    def rootBuildDir = project.layout.buildDirectory.get().asFile
+
+    doLast {
+        // Export to project build directory
+        if (!rootBuildDir.exists()) {
+            rootBuildDir.mkdirs()
+        }
+        def sourceFile = shadowJarFile.get().asFile
+        def rootTargetFile = new File(rootBuildDir, sourceFile.name)
+
+        java.nio.file.Files.copy(
+            sourceFile.toPath(),
+            rootTargetFile.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+        )
+        println "Exported ${sourceFile.name} to build directory"
+
+        // Export to local test server path if environment variable is provided
+        if (exportPath != null && !exportPath.isEmpty()) {
+            def destDir = new File(exportPath)
+            if (destDir.exists() && destDir.isDirectory()) {
+                // Delete existing jars starting with projectName
+                destDir.listFiles().each { f ->
+                    if (f.name.startsWith(projectName) && f.name.endsWith(".jar")) {
+                        println "Deleting existing plugin jar: ${f.name}"
+                        f.delete()
+                    }
+                }
+
+                // Copy the new jar using Java NIO for Configuration Cache compatibility
+                def targetFile = new File(destDir, sourceFile.name)
+
+                java.nio.file.Files.copy(
+                    sourceFile.toPath(),
+                    targetFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+
+                println "Exported ${sourceFile.name} to ${exportPath}"
+            } else {
+                println "Export path does not exist or is not a directory: ${exportPath}"
+            }
+        }
+    }
+}
+
+build.finalizedBy exportJar

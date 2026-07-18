@@ -21,11 +21,12 @@ All modules share the group `io.github.mcclauneck` and one Semantic Version
 | [`api`](api) | `:api` | **`io.github.mcclauneck:api`** | Pure-Java data contracts and immutable models. No platform or database dependencies. |
 | [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/central database backends. |
 | [`bukkit`](bukkit) | `:bukkit` | **`io.github.mcclauneck:bukkit`** | Shared Bukkit events and listeners, reused by every platform. |
-| [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; produces the shaded distributable jar. |
-| [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; produces the shaded distributable jar. |
-| [`foliamc`](platforms/foliamc) | `:platforms:foliamc` | — | FoliaMC plugin entry point; produces the shaded distributable jar. |
+| [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; bundled into the engine jar. |
+| [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; bundled into the engine jar. |
+| [`foliamc`](platforms/foliamc) | `:platforms:foliamc` | — | FoliaMC plugin entry point and Folia scheduler; bundled into the engine jar. |
+| [`engine`](platforms/engine) | `:platforms:engine` | — | Universal **central loader** — the single distributed jar that runs on SpigotMC, PaperMC, and Folia, detecting the server at enable time. |
 
-Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
+Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` } ← `engine`.
 Modules depend on each other through Gradle `project(':...')` references, so a single build
 compiles the whole project — no intermediate publishing step is required.
 
@@ -34,15 +35,17 @@ compiles the whole project — no intermediate publishing step is required.
 The project uses the Gradle wrapper.
 
 ```bash
-./gradlew build                 # build every module
-./gradlew :platforms:papermc:build        # build one platform (also: spigotmc, foliamc)
-./gradlew :platforms:papermc:shadowJar    # produce just the shaded PaperMC plugin jar
-./gradlew :platforms:papermc:exportJar    # copy the jar to $PAPERMC_PLUGIN_JAR_PATH if set
+./gradlew build                          # build every module
+./gradlew :platforms:engine:build        # build the universal jar
+./gradlew :platforms:engine:shadowJar    # produce just the shaded universal jar
+./gradlew :platforms:engine:exportJar    # copy the jar to $ENGINE_PLUGIN_JAR_PATH if set
 ```
 
-The platform modules (`spigotmc`, `papermc`, `foliamc`) produce the distributable, shaded
-plugin jars, and accept `SPIGOTMC_PLUGIN_JAR_PATH` / `PAPERMC_PLUGIN_JAR_PATH` /
-`FOLIAMC_PLUGIN_JAR_PATH` to copy the built jar to a local test server.
+The `engine` module produces the single distributable, shaded plugin jar
+(`MCEconomy-<version>.jar`) that runs on SpigotMC, PaperMC, and Folia — the server is detected
+at enable time. It accepts `ENGINE_PLUGIN_JAR_PATH` to copy the built jar to a local test
+server. The `spigotmc`, `papermc`, and `foliamc` modules still build thin per-platform jars,
+which the engine bundles.
 
 ## Publishing
 
@@ -55,10 +58,10 @@ Only the three reusable libraries publish to GitHub Packages
 ./gradlew :bukkit:publish
 ```
 
-The `spigotmc`, `papermc`, and `foliamc` platform modules do **not** publish — they are
-terminal distributable, shaded jars. Each library module declares its own dependencies as
-`compileOnly`, so the platform modules are the single place that shades `api`, `common`, and
-`bukkit` into the distributable jar.
+The `spigotmc`, `papermc`, `foliamc`, and `engine` platform modules do **not** publish — they
+are terminal shaded jars. The `engine` module is the single place that shades `api`, `common`,
+and `bukkit` into the one universal distributable jar; the per-platform modules ship only their
+own entry point classes, which the engine bundles.
 
 ## MCIdentity integration
 
@@ -73,7 +76,7 @@ account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every ide
 player owns therefore keeps its own wallets and transaction logs.
 
 The MCIdentity artifacts (`io.github.mcoriax:api`, `io.github.mcoriax:common`,
-`io.github.mcoriax:bukkit`, version `1.0.0`) are consumed `compileOnly` from the MCIdentity
+`io.github.mcoriax:bukkit`, version `1.1.0`) are consumed `compileOnly` from the MCIdentity
 GitHub Packages registry — the plugin provides the classes at runtime, so nothing is shaded.
 
 ## Developer API
@@ -120,16 +123,15 @@ source of truth for every module.
 - **Build tool:** the bundled Gradle wrapper (Gradle 9.5.0). No system Gradle required.
 - **JDK:** a **Java 25** toolchain. Gradle auto-provisions it via the foojay resolver if it is
   not already installed; otherwise install a JDK 25 locally.
-- **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer,
-  matching the platform module you deploy.
+- **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer.
+  The single universal jar detects the server automatically, so the same jar runs on all three.
 - **MCIdentity plugin:** MCEconomy hard-depends on the MCIdentity plugin
   (`depend: [MCIdentity]`), so it must be installed on the server.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
 - **Credentials (GitHub Packages):** building the `bukkit` module (resolving the MCIdentity
   artifacts) and publishing `api`/`common` require GitHub Packages credentials with the
-  `read:packages`/`write:packages` scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN` (CI),
-  then `AGENT_GITHUB_NAME`/`AGENT_GITHUB_TOKEN`, then `USER_GITHUB_NAME`/`USER_GITHUB_TOKEN`.
+  `read:packages`/`write:packages` scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN`.
 
 ## Documentation
 

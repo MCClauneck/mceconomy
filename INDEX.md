@@ -19,10 +19,11 @@ mceconomy/
 ├── api/                      # io.github.mcclauneck:api      — PUBLISHED library
 ├── common/                   # io.github.mcclauneck:common   — PUBLISHED library
 ├── bukkit/                   # io.github.mcclauneck:bukkit   — PUBLISHED library (Bukkit events/listeners)
-└── platforms/                # platform entry points (shaded jars, not published)
+└── platforms/                # platform entry points + the universal engine (not published)
     ├── spigotmc/             # SpigotMC plugin entry point
     ├── papermc/              # PaperMC plugin entry point
-    └── foliamc/              # FoliaMC plugin entry point
+    ├── foliamc/              # FoliaMC plugin entry point + Folia scheduler
+    └── engine/               # Universal "central loader" — the single distributed jar
 ```
 
 ## Modules
@@ -32,11 +33,12 @@ mceconomy/
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
 | `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, and listeners, including the MCIdentity integration. |
-| `spigotmc` | `:platforms:spigotmc` | No | SpigotMC platform entry point (shaded jar). |
-| `papermc` | `:platforms:papermc` | No | PaperMC platform entry point (shaded jar). |
-| `foliamc` | `:platforms:foliamc` | No | FoliaMC platform entry point (shaded jar). |
+| `spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
+| `papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
+| `foliamc` | `:platforms:foliamc` | No | FoliaMC entry point and Folia scheduler; bundled into the engine jar. |
+| `engine` | `:platforms:engine` | No | Universal central loader; the single distributed jar that runs on SpigotMC, PaperMC, and Folia, detecting the server at enable time and installing the matching scheduler. |
 
-Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` }.
+Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` } ← `engine`.
 Cross-module dependencies are wired with Gradle `project(':...')` references; see each module's
 `build.gradle` for the full wiring and [`README.md`](README.md) for the publishing rules.
 

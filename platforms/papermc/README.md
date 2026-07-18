@@ -1,10 +1,11 @@
 # MCEconomy PaperMC (`papermc`)
 
 The **PaperMC** platform entry point for the **MCEconomy** multi-platform Minecraft economy
-plugin. It wires the shared modules together into a single distributable, shaded jar.
+plugin. It supplies the classic Bukkit scheduler and builds a thin jar that the universal
+[`engine`](../engine) module bundles into the single distributed jar.
 
-> The `papermc` module of the [MCEconomy monorepo](../../README.md). It produces a terminal
-> distributable jar and is **not published**.
+> The `papermc` module of the [MCEconomy monorepo](../../README.md). It builds a thin,
+> per-platform jar that the [`engine`](../engine) module bundles, and is **not published**.
 
 ## Runtime flow
 
@@ -29,8 +30,8 @@ standard PaperMC scheduling and Adventure (`Component.translatable()`) conventio
 
 ## Dependencies
 
-- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules
-  (via `project(':...')`).
+- [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules,
+  `compileOnly` (via `project(':...')`); the `engine` module shades them into the distributed jar.
 - `io.papermc.paper:paper-api` — `compileOnly`.
 - **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the
   plugin must be installed on the server.
@@ -40,9 +41,9 @@ standard PaperMC scheduling and Adventure (`Component.translatable()`) conventio
 From the repository root:
 
 ```bash
-./gradlew :platforms:papermc:build          # produces the shaded plugin jar
-./gradlew :platforms:papermc:shadowJar      # the distributable jar only
-./gradlew :platforms:papermc:exportJar      # also copies the jar to $PAPERMC_PLUGIN_JAR_PATH if set
+./gradlew :platforms:papermc:build          # produces the thin per-platform jar
+./gradlew :platforms:papermc:shadowJar      # the thin jar only (bundled by the engine)
+./gradlew :platforms:engine:build           # build the single universal jar
 ```
 
 The build uses the Gradle wrapper and targets a **Java 25** toolchain.
