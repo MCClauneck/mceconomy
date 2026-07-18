@@ -76,7 +76,7 @@ account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every ide
 player owns therefore keeps its own wallets and transaction logs.
 
 The MCIdentity artifacts (`io.github.mcoriax:api`, `io.github.mcoriax:common`,
-`io.github.mcoriax:bukkit`, version `1.1.0`) are consumed `compileOnly` from the MCIdentity
+`io.github.mcoriax:bukkit`, version `2.0.0`) are consumed `compileOnly` from the MCIdentity
 GitHub Packages registry — the plugin provides the classes at runtime, so nothing is shaded.
 
 ## Developer API

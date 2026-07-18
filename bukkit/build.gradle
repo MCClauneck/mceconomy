@@ -38,9 +38,9 @@ dependencies {
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
 
     // MCIdentity — provided by the server at runtime, so compileOnly only.
-    compileOnly 'io.github.mcoriax:api:1.1.0'
-    compileOnly 'io.github.mcoriax:common:1.1.0'
-    compileOnly 'io.github.mcoriax:bukkit:1.1.0'
+    compileOnly 'io.github.mcoriax:api:2.0.0'
+    compileOnly 'io.github.mcoriax:common:2.0.0'
+    compileOnly 'io.github.mcoriax:bukkit:2.0.0'
 
     testImplementation project(':api')
     testImplementation project(':common')
