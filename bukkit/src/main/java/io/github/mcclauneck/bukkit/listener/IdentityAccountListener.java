@@ -3,7 +3,7 @@ package io.github.mcclauneck.bukkit.listener;
 import io.github.mcclauneck.api.models.AccountTypes;
 import io.github.mcclauneck.common.MCEconomyProvider;
 
-import io.github.mcoriax.bukkit.event.MCIdentityEquipEvent;
+import io.github.mcoriax.mcidentity.bukkit.event.MCIdentityEquipEvent;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

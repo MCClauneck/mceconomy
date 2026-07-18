@@ -6,7 +6,7 @@ import io.github.mcclauneck.api.models.LogScope;
 import io.github.mcclauneck.bukkit.event.EconomyTransactionEvent;
 import io.github.mcclauneck.bukkit.event.EconomyWalletUpdateEvent;
 import io.github.mcclauneck.common.MCEconomyProvider;
-import io.github.mcoriax.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

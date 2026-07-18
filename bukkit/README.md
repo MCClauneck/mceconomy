@@ -47,7 +47,7 @@ into the single distributed jar, so this module never bundles them itself.
 - [`common`](../common) — `compileOnly` (via `project(':common')`).
 - `org.spigotmc:spigot-api` — `compileOnly` (provided by the server).
 - `io.github.mcoriax:api` / `io.github.mcoriax:common` / `io.github.mcoriax:bukkit`
-  (MCIdentity `1.1.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
+  (MCIdentity `2.0.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
   registry (provided by the MCIdentity plugin at runtime).
 
 ## Building

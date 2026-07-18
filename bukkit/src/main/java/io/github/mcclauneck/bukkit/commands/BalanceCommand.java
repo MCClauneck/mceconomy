@@ -5,7 +5,7 @@ import io.github.mcclauneck.api.models.Currency;
 import io.github.mcclauneck.bukkit.gui.BalanceGui;
 import io.github.mcclauneck.bukkit.gui.CurrencyBalanceEntry;
 import io.github.mcclauneck.common.MCEconomyProvider;
-import io.github.mcoriax.common.MCIdentityProvider;
+import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
