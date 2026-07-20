@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: io.github.mcclauneck.papermc.MCEconomyPlugin
+main: io.github.mcclauneck.mceconomy.papermc.MCEconomyPlugin
 
 api-version: '1.20'
 author: MCClauneck
