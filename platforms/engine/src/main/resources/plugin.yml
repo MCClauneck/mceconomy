@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: io.github.mcclauneck.engine.MCEconomyEnginePlugin
+main: io.github.mcclauneck.mceconomy.engine.MCEconomyEnginePlugin
 
 api-version: '1.20'
 folia-supported: true

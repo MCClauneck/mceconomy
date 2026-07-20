@@ -99,7 +99,7 @@ depend: [MCEconomy]        # use softdepend if MCEconomy is optional
 ## 2. API Usage
 
 All economy data flows through
-`io.github.mcclauneck.common.MCEconomyProvider`, the central class that
+`io.github.mcclauneck.mceconomy.common.MCEconomyProvider`, the central class that
 orchestrates accounts, wallets, currencies, transfers, and transaction logging
 over a pluggable `IEconomyDatabase` backend (SQLite, MySQL, PostgreSQL, MongoDB,
 or the remote central API).
@@ -115,12 +115,12 @@ or the remote central API).
 MCEconomy holds one `MCEconomyProvider` per server, exposed by the plugin's main
 class through `getProvider()`. Every platform entry point (SpigotMC, PaperMC,
 and Folia) extends the shared
-`io.github.mcclauneck.bukkit.AbstractMCEconomyPlugin` base from the published
+`io.github.mcclauneck.mceconomy.bukkit.AbstractMCEconomyPlugin` base from the published
 `bukkit` module, so the portable way to reach the provider is a simple cast:
 
 ```java
-import io.github.mcclauneck.bukkit.AbstractMCEconomyPlugin;
-import io.github.mcclauneck.common.MCEconomyProvider;
+import io.github.mcclauneck.mceconomy.bukkit.AbstractMCEconomyPlugin;
+import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
@@ -142,7 +142,7 @@ Currencies are configured by the server owner and cached in memory. Fetch a
 `Currency` by its system code before moving money:
 
 ```java
-import io.github.mcclauneck.api.models.Currency;
+import io.github.mcclauneck.mceconomy.api.models.Currency;
 
 Currency coin = economy().getCurrency("coin");   // null if no such currency
 
@@ -164,7 +164,7 @@ Wallets are created lazily, so you rarely need `createAccount` — but it is
 idempotent and safe to call to guarantee the account row exists:
 
 ```java
-import io.github.mcclauneck.api.models.AccountTypes;
+import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
 import java.util.UUID;
 
 UUID identityUuid = /* from MCIdentity */ ;
@@ -193,7 +193,7 @@ All mutating calls take a `LogScope` (audit category: `SEND`, `RECEIVE`,
 non-negative; the method name decides the direction.
 
 ```java
-import io.github.mcclauneck.api.models.LogScope;
+import io.github.mcclauneck.mceconomy.api.models.LogScope;
 import java.util.UUID;
 
 UUID txn = UUID.randomUUID();
@@ -323,7 +323,7 @@ economy().transferBalance(
 ## 3. Bukkit Integration
 
 MCEconomy exposes custom Bukkit events from the
-`io.github.mcclauneck.bukkit.event` package so other plugins can veto or react to
+`io.github.mcclauneck.mceconomy.bukkit.event` package so other plugins can veto or react to
 money movements. Both events work across **SpigotMC**, **PaperMC**, and **Folia**
 and mark themselves asynchronous when fired off the primary thread.
 
@@ -342,10 +342,10 @@ the whole ecosystem one agreed veto point.
 Fire the event before crediting, and skip the credit if a listener cancelled it:
 
 ```java
-import io.github.mcclauneck.api.models.AccountTypes;
-import io.github.mcclauneck.api.models.Currency;
-import io.github.mcclauneck.api.models.LogScope;
-import io.github.mcclauneck.bukkit.event.EconomyTransactionEvent;
+import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
+import io.github.mcclauneck.mceconomy.api.models.Currency;
+import io.github.mcclauneck.mceconomy.api.models.LogScope;
+import io.github.mcclauneck.mceconomy.bukkit.event.EconomyTransactionEvent;
 import org.bukkit.Bukkit;
 
 import java.util.UUID;
@@ -366,8 +366,8 @@ And a listener in another plugin that refuses payouts — for example while an
 identity is "frozen":
 
 ```java
-import io.github.mcclauneck.api.models.LogScope;
-import io.github.mcclauneck.bukkit.event.EconomyTransactionEvent;
+import io.github.mcclauneck.mceconomy.api.models.LogScope;
+import io.github.mcclauneck.mceconomy.bukkit.event.EconomyTransactionEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -407,7 +407,7 @@ schedule back onto the appropriate scheduler instead of calling it directly.
 ### 3.2 React to a completed balance change
 
 ```java
-import io.github.mcclauneck.bukkit.event.EconomyWalletUpdateEvent;
+import io.github.mcclauneck.mceconomy.bukkit.event.EconomyWalletUpdateEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -427,7 +427,7 @@ public class BalanceBoardListener implements Listener {
 <details>
 <summary><code>EconomyTransactionEvent</code></summary>
 
-- **Package**: `io.github.mcclauneck.bukkit.event`
+- **Package**: `io.github.mcclauneck.mceconomy.bukkit.event`
 - **Description**: Fired before a balance change is applied; the veto point for economy operations.
 - **Cancellable**: Yes (`setCancelled(true)` blocks the change).
 - **Constructor**: `EconomyTransactionEvent(String accountType, UUID accountUuid, String currencySystemCode, long amount, LogScope scope)`
@@ -443,7 +443,7 @@ public class BalanceBoardListener implements Listener {
 <details>
 <summary><code>EconomyWalletUpdateEvent</code></summary>
 
-- **Package**: `io.github.mcclauneck.bukkit.event`
+- **Package**: `io.github.mcclauneck.mceconomy.bukkit.event`
 - **Description**: Fired after a wallet balance changed. Notification only.
 - **Cancellable**: No.
 - **Constructor**: `EconomyWalletUpdateEvent(String accountType, UUID accountUuid, String currencySystemCode, long newBalance)`
@@ -467,7 +467,7 @@ MCEconomy depends on **MCIdentity** (`depend: [MCIdentity]`). A single player ow
 time. Switching identities is a full context switch — as if the player logged into
 a completely different account. MCEconomy already keys its own accounts by the
 identity UUID through the `identity` account type
-(`io.github.mcclauneck.api.models.AccountTypes.IDENTITY`), created automatically
+(`io.github.mcclauneck.mceconomy.api.models.AccountTypes.IDENTITY`), created automatically
 when an identity is equipped.
 
 **Do this — key money by the Identity UUID:**
@@ -524,8 +524,8 @@ wallet with a single `transferBalance` call, which debits and credits atomically
 and writes both log rows:
 
 ```java
-import io.github.mcclauneck.api.models.AccountTypes;
-import io.github.mcclauneck.api.models.Currency;
+import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
+import io.github.mcclauneck.mceconomy.api.models.Currency;
 import java.util.UUID;
 
 public class ClanTreasuryService {
@@ -566,8 +566,8 @@ A guild plugin works the same way with its own `"guild"` type — for example a
 weekly upkeep charge taken straight from the guild's account:
 
 ```java
-import io.github.mcclauneck.api.models.Currency;
-import io.github.mcclauneck.api.models.LogScope;
+import io.github.mcclauneck.mceconomy.api.models.Currency;
+import io.github.mcclauneck.mceconomy.api.models.LogScope;
 import java.util.UUID;
 
 public class GuildUpkeepService {
