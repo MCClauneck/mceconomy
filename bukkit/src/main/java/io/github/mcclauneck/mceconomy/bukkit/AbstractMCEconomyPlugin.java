@@ -1,12 +1,14 @@
 package io.github.mcclauneck.mceconomy.bukkit;
 
 import io.github.mcclauneck.mceconomy.api.database.IEconomyDatabase;
+import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
 import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayTabCompleter;
 import io.github.mcclauneck.mceconomy.bukkit.config.CurrencyConfig;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGuiListener;
+import io.github.mcclauneck.mceconomy.bukkit.host.MCIdentityBridge;
 import io.github.mcclauneck.mceconomy.bukkit.listener.IdentityAccountListener;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.PlatformScheduler;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.Schedulers;
@@ -54,6 +56,13 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     private final Map<String, String> currencyTextures = new HashMap<>();
 
     /**
+     * Reflective binding to the MCIdentity plugin, resolved during
+     * {@link #onEnable()}. Null when MCIdentity is absent or incompatible, in
+     * which case identity-bound commands report that and do nothing.
+     */
+    private IdentitySource identities;
+
+    /**
      * Supplies the platform specific scheduler installed during {@link #onEnable()}.
      * @return the scheduler implementation for this platform.
      */
@@ -93,8 +102,15 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         logger.info("Ensuring configured currencies exist...");
         this.provider.ensureDefaultCurrencies().join();
 
-        // Give every equipped MCIdentity identity its own "identity" economy account
-        getServer().getPluginManager().registerEvents(new IdentityAccountListener(this.provider, logger), this);
+        // Bind to MCIdentity reflectively. The economy keys every wallet by identity
+        // UUID, so a missing or incompatible identity plugin is fatal to trading —
+        // but it is reported and degraded, not thrown, so the server still starts.
+        MCIdentityBridge identityBridge = MCIdentityBridge.resolve(this).orElse(null);
+        this.identities = identityBridge;
+        if (identityBridge != null) {
+            // Give every equipped MCIdentity identity its own "identity" economy account
+            new IdentityAccountListener(this.provider, logger).register(this, identityBridge);
+        }
 
         // The /balance GUI and /pay transfers, both bound to active identities
         getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
@@ -110,11 +126,11 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     private void registerCommands(Logger logger) {
         PluginCommand balance = getCommand("balance");
         if (balance != null) {
-            balance.setExecutor(new BalanceCommand(this.provider, this.currencyTextures, logger));
+            balance.setExecutor(new BalanceCommand(this.provider, this.identities, this.currencyTextures, logger));
         }
         PluginCommand pay = getCommand("pay");
         if (pay != null) {
-            pay.setExecutor(new PayCommand(this.provider, logger));
+            pay.setExecutor(new PayCommand(this.provider, this.identities, logger));
             pay.setTabCompleter(new PayTabCompleter(this.provider));
         }
     }
@@ -187,6 +203,15 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
      */
     public MCEconomyProvider getProvider() {
         return this.provider;
+    }
+
+    /**
+     * Gets the active MCIdentity binding, which resolves the identity a player
+     * currently has equipped.
+     * @return The binding, or {@code null} when MCIdentity is unavailable.
+     */
+    public IdentitySource getIdentities() {
+        return this.identities;
     }
 
     /**

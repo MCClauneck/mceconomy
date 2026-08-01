@@ -5,7 +5,7 @@ import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGui;
 import io.github.mcclauneck.mceconomy.bukkit.gui.CurrencyBalanceEntry;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
-import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -40,6 +40,11 @@ public class BalanceCommand implements CommandExecutor {
     private final Map<String, String> currencyTextures;
 
     /**
+     * The reflective MCIdentity binding used to resolve the active identity.
+     */
+    private final IdentitySource identities;
+
+    /**
      * Logger used to report failures while assembling the GUI data.
      */
     private final Logger logger;
@@ -47,11 +52,14 @@ public class BalanceCommand implements CommandExecutor {
     /**
      * Constructs the command.
      * @param provider The central economy provider.
+     * @param identities The MCIdentity binding, or {@code null} when unavailable.
      * @param currencyTextures Base64 head textures keyed by currency system code.
      * @param logger The plugin logger for error reporting.
      */
-    public BalanceCommand(MCEconomyProvider provider, Map<String, String> currencyTextures, Logger logger) {
+    public BalanceCommand(MCEconomyProvider provider, IdentitySource identities,
+                          Map<String, String> currencyTextures, Logger logger) {
         this.provider = provider;
+        this.identities = identities;
         this.currencyTextures = currencyTextures;
         this.logger = logger;
     }
@@ -62,12 +70,12 @@ public class BalanceCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Only players can open the balance GUI.");
             return true;
         }
-        if (!MCIdentityProvider.hasDatabase()) {
+        if (this.identities == null || !this.identities.isAvailable()) {
             player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
             return true;
         }
 
-        MCIdentityProvider.instance.getActiveIdentity(player.getUniqueId())
+        this.identities.activeIdentity(player.getUniqueId())
                 .thenAccept(optIdentity -> optIdentity.ifPresentOrElse(
                         identityUuid -> openFor(player, identityUuid),
                         () -> player.sendMessage(ChatColor.RED

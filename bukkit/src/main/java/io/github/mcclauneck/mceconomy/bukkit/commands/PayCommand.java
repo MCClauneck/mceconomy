@@ -6,7 +6,7 @@ import io.github.mcclauneck.mceconomy.api.models.LogScope;
 import io.github.mcclauneck.mceconomy.bukkit.event.EconomyTransactionEvent;
 import io.github.mcclauneck.mceconomy.bukkit.event.EconomyWalletUpdateEvent;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
-import io.github.mcoriax.mcidentity.common.MCIdentityProvider;
+import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -42,6 +42,11 @@ public class PayCommand implements CommandExecutor {
     private final MCEconomyProvider provider;
 
     /**
+     * The reflective MCIdentity binding used to resolve both sides' identities.
+     */
+    private final IdentitySource identities;
+
+    /**
      * Logger used to report unexpected transfer failures.
      */
     private final Logger logger;
@@ -49,10 +54,12 @@ public class PayCommand implements CommandExecutor {
     /**
      * Constructs the command.
      * @param provider The central economy provider.
+     * @param identities The MCIdentity binding, or {@code null} when unavailable.
      * @param logger The plugin logger for error reporting.
      */
-    public PayCommand(MCEconomyProvider provider, Logger logger) {
+    public PayCommand(MCEconomyProvider provider, IdentitySource identities, Logger logger) {
         this.provider = provider;
+        this.identities = identities;
         this.logger = logger;
     }
 
@@ -98,16 +105,16 @@ public class PayCommand implements CommandExecutor {
             return true;
         }
 
-        if (!MCIdentityProvider.hasDatabase()) {
+        if (this.identities == null || !this.identities.isAvailable()) {
             player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
             return true;
         }
 
         // Payments move between ACTIVE IDENTITIES, never between raw players.
         long finalAmount = amount;
-        MCIdentityProvider identity = MCIdentityProvider.instance;
-        identity.getActiveIdentity(player.getUniqueId())
-                .thenCombine(identity.getActiveIdentity(target.getUniqueId()),
+        IdentitySource identity = this.identities;
+        identity.activeIdentity(player.getUniqueId())
+                .thenCombine(identity.activeIdentity(target.getUniqueId()),
                         (senderIdentity, targetIdentity) -> {
                             pay(player, target, currency, finalAmount, senderIdentity, targetIdentity);
                             return null;
