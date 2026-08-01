@@ -9,23 +9,15 @@ description = "MCClauneck Plugin Bukkit"
 
 repositories {
     // Module-specific repositories only; mavenCentral is provided by the root build.
+    // No GitHub Packages registry is declared: MCIdentity is reached through
+    // runtime reflection (see bukkit/host/), so neither its artifacts nor the
+    // credentials to download them are part of this build — and consumers of the
+    // published library inherit no MCIdentity dependency either.
     maven {
         url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
     maven {
         url = 'https://oss.sonatype.org/content/repositories/snapshots'
-    }
-    maven {
-        // GitHub Packages always requires authentication, even for public packages.
-        name = 'MCIdentityGitHubPackages'
-        url = 'https://maven.pkg.github.com/MCOriax/mcidentity'
-        credentials {
-            username = System.getenv('GITHUB_ACTOR')
-            password = System.getenv('GITHUB_TOKEN')
-        }
-        content {
-            includeGroup 'io.github.mcoriax'
-        }
     }
 }
 
@@ -36,11 +28,6 @@ dependencies {
     compileOnly project(':api')
     compileOnly project(':common')
     compileOnly 'org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT'
-
-    // MCIdentity — provided by the server at runtime, so compileOnly only.
-    compileOnly 'io.github.mcoriax:api:2.0.0'
-    compileOnly 'io.github.mcoriax:common:2.0.0'
-    compileOnly 'io.github.mcoriax:bukkit:2.0.0'
 
     testImplementation project(':api')
     testImplementation project(':common')

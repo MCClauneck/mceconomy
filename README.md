@@ -75,9 +75,16 @@ Each MCIdentity identity is a fully separate character, so economy data is bound
 account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every identity a
 player owns therefore keeps its own wallets and transaction logs.
 
-The MCIdentity artifacts (`io.github.mcoriax:api`, `io.github.mcoriax:common`,
-`io.github.mcoriax:bukkit`, version `2.0.0`) are consumed `compileOnly` from the MCIdentity
-GitHub Packages registry — the plugin provides the classes at runtime, so nothing is shaded.
+MCIdentity is **not** a build dependency. It is bound by runtime reflection: at enable time
+`bukkit/host/MCIdentityBridge` resolves the provider and the equip event through the
+MCIdentity plugin's own classloader (the `depend` declaration guarantees it loaded first).
+No `io.github.mcoriax` artifact appears anywhere in this build, so the project compiles
+without GitHub Packages credentials, does not break when MCIdentity republishes under new
+coordinates, and passes no MCIdentity dependency on to consumers of the published
+`api`/`common`/`bukkit` libraries. `gradle.properties` records the MCIdentity release the
+bridge targets (`mcidentity-version`, currently `4.0.1`). A missing or incompatible
+MCIdentity is logged once and leaves identity wallets unavailable rather than stopping the
+server from starting.
 
 ## Developer API
 
@@ -129,9 +136,10 @@ source of truth for every module.
   (`depend: [MCIdentity]`), so it must be installed on the server.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
-- **Credentials (GitHub Packages):** building the `bukkit` module (resolving the MCIdentity
-  artifacts) and publishing `api`/`common` require GitHub Packages credentials with the
-  `read:packages`/`write:packages` scopes, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN`.
+- **Credentials (GitHub Packages):** only **publishing** needs them — a token with the
+  `write:packages` scope, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN`. Building, including
+  the `bukkit` module, needs no credentials at all now that MCIdentity is bound by
+  reflection.
 
 ## Documentation
 

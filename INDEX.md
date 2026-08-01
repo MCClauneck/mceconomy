@@ -32,7 +32,7 @@ mceconomy/
 | --- | --- | --- | --- |
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
-| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, and listeners, including the MCIdentity integration. |
+| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, listeners, and the reflective MCIdentity binding under `host/`. |
 | `spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
 | `papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
 | `foliamc` | `:platforms:foliamc` | No | FoliaMC entry point and Folia scheduler; bundled into the engine jar. |
@@ -42,10 +42,12 @@ Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc
 Cross-module dependencies are wired with Gradle `project(':...')` references; see each module's
 `build.gradle` for the full wiring and [`README.md`](README.md) for the publishing rules.
 
-The `bukkit` module also compiles (`compileOnly`) against the **MCIdentity** plugin's
-published artifacts (`io.github.mcoriax:api`/`common`/`bukkit`) to bind economy accounts of
-type `identity` to equipped identities; every platform `plugin.yml` declares
-`depend: [MCIdentity]`.
+The `bukkit` module binds economy accounts of type `identity` to equipped **MCIdentity**
+identities, but declares **no** MCIdentity artifact: `bukkit/host/MCIdentityBridge` resolves
+the provider and the equip event reflectively through the host plugin's classloader at enable
+time, against the pure `api/host/IdentitySource` contract. Every platform `plugin.yml`
+declares `depend: [MCIdentity]`, which is what guarantees the host is loaded first.
+`gradle.properties` records the MCIdentity release the bridge targets.
 
 ## Documentation
 
