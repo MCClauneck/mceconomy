@@ -92,7 +92,7 @@ public class BalanceCommand implements CommandExecutor {
      * Reads every currency balance of the identity and opens the GUI.
      */
     private void openFor(Player player, UUID identityUuid) {
-        List<Currency> currencies = orderedCurrencies();
+        List<Currency> currencies = orderedCurrencies(this.provider);
         List<CompletableFuture<CurrencyBalanceEntry>> rows = new ArrayList<>(currencies.size());
         for (Currency currency : currencies) {
             rows.add(provider.getBalance(AccountTypes.IDENTITY, identityUuid, currency)
@@ -119,9 +119,13 @@ public class BalanceCommand implements CommandExecutor {
     /**
      * Returns the cached currencies in a stable display order: the configured
      * (managed) currencies first, in configuration order, then any remaining
-     * database currencies sorted by system code.
+     * database currencies sorted by system code. Shared with the MCAgents tools
+     * so the AI reports balances in the order the GUI shows them.
+     *
+     * @param provider The economy provider whose cache is read.
+     * @return The currencies in display order.
      */
-    private List<Currency> orderedCurrencies() {
+    public static List<Currency> orderedCurrencies(MCEconomyProvider provider) {
         Map<String, Currency> remaining = new LinkedHashMap<>();
         provider.getCurrencies().stream()
                 .sorted((a, b) -> a.systemCode().compareToIgnoreCase(b.systemCode()))

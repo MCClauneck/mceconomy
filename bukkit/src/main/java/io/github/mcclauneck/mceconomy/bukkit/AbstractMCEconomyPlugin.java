@@ -3,6 +3,8 @@ package io.github.mcclauneck.mceconomy.bukkit;
 import io.github.mcclauneck.mceconomy.api.database.IEconomyDatabase;
 import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
+import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.BukkitEconomyToolPort;
+import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.MCAgentsToolRegistrar;
 import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayTabCompleter;
@@ -115,6 +117,9 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         // The /balance GUI and /pay transfers, both bound to active identities
         getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
         registerCommands(logger);
+
+        // Optional: expose read-only balance tools to MCAgents when it is installed
+        MCAgentsToolRegistrar.register(new BukkitEconomyToolPort(this), logger);
 
         logger.info("MCEconomy Plugin has been successfully enabled!");
     }

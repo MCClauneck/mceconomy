@@ -8,6 +8,7 @@ author: MCClauneck
 description: A plugin for FoliaMC
 
 depend: [MCIdentity]
+softdepend: [MCAgents]
 
 commands:
   balance:

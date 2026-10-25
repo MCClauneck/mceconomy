@@ -19,6 +19,7 @@ mceconomy/
 ├── api/                      # io.github.mcclauneck:api      — PUBLISHED library
 ├── common/                   # io.github.mcclauneck:common   — PUBLISHED library
 ├── bukkit/                   # io.github.mcclauneck:bukkit   — PUBLISHED library (Bukkit events/listeners)
+├── tools/                    # MCAgents AI tools (pure Java, not published; shaded by the engine)
 └── platforms/                # platform entry points + the universal engine (not published)
     ├── spigotmc/             # SpigotMC plugin entry point
     ├── papermc/              # PaperMC plugin entry point
@@ -33,12 +34,14 @@ mceconomy/
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
 | `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, listeners, and the reflective MCIdentity binding under `host/`. |
+| `tools` | `:tools` | No | Pure-Java, read-only MCAgents AI tools (`economy_get_my_balances`, `economy_list_currencies`) and the reflective `AITool` proxy adapter; registered by `bukkit/bridge/mcagents/MCAgentsToolRegistrar` when MCAgents is installed, shaded by the engine. |
 | `spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
 | `papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
 | `foliamc` | `:platforms:foliamc` | No | FoliaMC entry point and Folia scheduler; bundled into the engine jar. |
 | `engine` | `:platforms:engine` | No | Universal central loader; the single distributed jar that runs on SpigotMC, PaperMC, and Folia, detecting the server at enable time and installing the matching scheduler. |
 
-Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` } ← `engine`.
+Dependency direction: `api` ← `common` ← `bukkit` ← { `spigotmc`, `papermc`, `foliamc` } ← `engine`;
+`tools` depends only on `api`, and `bukkit` and `engine` depend on it.
 Cross-module dependencies are wired with Gradle `project(':...')` references; see each module's
 `build.gradle` for the full wiring and [`README.md`](README.md) for the publishing rules.
 
@@ -58,11 +61,13 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 | [`wiki/api.md`](wiki/api.md) | Developer API guide for third-party plugins integrating with MCEconomy (covers the `api`, `common`, and `bukkit` modules, with a cancel-give-money event example). |
 | [`wiki/environment.md`](wiki/environment.md) | Build and publish environment variables and infrastructure examples. |
 | [`wiki/system.md`](wiki/system.md) | System architecture and runtime behavior. |
+| [`wiki/agent-tools.md`](wiki/agent-tools.md) | The optional MCAgents AI tools: names, what they return, and who can use them. |
 
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
 - Per-module details → each module's `README.md`.
 - Developer API integration → [`wiki/api.md`](wiki/api.md).
+- MCAgents AI tools → [`wiki/agent-tools.md`](wiki/agent-tools.md).
 - MCIdentity integration → [`bukkit/README.md`](bukkit/README.md) and the root
   [`README.md`](README.md).
 - Project overview, build, publishing and requirements → [`README.md`](README.md).
