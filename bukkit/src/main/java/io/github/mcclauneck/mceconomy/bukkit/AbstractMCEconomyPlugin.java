@@ -8,7 +8,9 @@ import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.MCAgentsToolRegistr
 import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayCommand;
 import io.github.mcclauneck.mceconomy.bukkit.commands.PayTabCompleter;
+import io.github.mcclauneck.mceconomy.bukkit.config.AgentsSettings;
 import io.github.mcclauneck.mceconomy.bukkit.config.CurrencyConfig;
+import io.github.mcclauneck.mceconomy.bukkit.config.MCAgentsGlobal;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGuiListener;
 import io.github.mcclauneck.mceconomy.bukkit.host.MCIdentityBridge;
 import io.github.mcclauneck.mceconomy.bukkit.listener.IdentityAccountListener;
@@ -65,6 +67,13 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     private IdentitySource identities;
 
     /**
+     * The {@code agents} block of {@code config.yml}: the AI model and
+     * OpenRouter API key this plugin's agent work runs on, each {@code global}
+     * by default to share MCAgents' own. Read during {@link #onEnable()}.
+     */
+    private AgentsSettings agentsSettings = new AgentsSettings(AgentsSettings.GLOBAL, AgentsSettings.GLOBAL);
+
+    /**
      * Supplies the platform specific scheduler installed during {@link #onEnable()}.
      * @return the scheduler implementation for this platform.
      */
@@ -83,6 +92,11 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        // The AI model and key: 'global' defers to MCAgents' own agents.model / agents.token
+        this.agentsSettings = AgentsSettings.read(getConfig());
+        logger.info("AI agent model: " + (this.agentsSettings.globalModel()
+            ? "global (MCAgents)" : this.agentsSettings.model()));
 
         IEconomyDatabase database = createDatabase(logger);
 
@@ -217,6 +231,34 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
      */
     public IdentitySource getIdentities() {
         return this.identities;
+    }
+
+    /**
+     * Gets the {@code agents} block as configured, before {@code global} is
+     * resolved.
+     * @return The settings; both values {@code global} until the plugin enables.
+     */
+    public AgentsSettings getAgentsSettings() {
+        return this.agentsSettings;
+    }
+
+    /**
+     * Gets the AI model this plugin's agent work runs on: {@code agents.model},
+     * or MCAgents' own model when it is {@code global}.
+     * @return The model id, blank when it is global and MCAgents has none.
+     */
+    public String getAgentsModel() {
+        return this.agentsSettings.resolveModel(new MCAgentsGlobal());
+    }
+
+    /**
+     * Gets the OpenRouter API key this plugin's agent work runs on:
+     * {@code agents.token}, or MCAgents' own key when it is {@code global}.
+     * Never log or display the result.
+     * @return The key, blank when it is global and MCAgents has none.
+     */
+    public String getAgentsToken() {
+        return this.agentsSettings.resolveToken(new MCAgentsGlobal());
     }
 
     /**
