@@ -21,6 +21,7 @@ All modules share the group `io.github.mcclauneck` and one Semantic Version
 | [`api`](api) | `:api` | **`io.github.mcclauneck:api`** | Pure-Java data contracts and immutable models. No platform or database dependencies. |
 | [`common`](common) | `:common` | **`io.github.mcclauneck:common`** | The central `MCEconomyProvider` and the SQLite/MySQL/PostgreSQL/MongoDB/central database backends. |
 | [`bukkit`](bukkit) | `:bukkit` | **`io.github.mcclauneck:bukkit`** | Shared Bukkit events and listeners, reused by every platform. |
+| [`tools`](tools) | `:tools` | — | Read-only MCAgents AI tools for players' own balances; see [`wiki/agent-tools.md`](wiki/agent-tools.md). |
 | [`spigotmc`](platforms/spigotmc) | `:platforms:spigotmc` | — | SpigotMC plugin entry point; bundled into the engine jar. |
 | [`papermc`](platforms/papermc) | `:platforms:papermc` | — | PaperMC plugin entry point; bundled into the engine jar. |
 | [`foliamc`](platforms/foliamc) | `:platforms:foliamc` | — | FoliaMC plugin entry point and Folia scheduler; bundled into the engine jar. |

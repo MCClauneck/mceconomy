@@ -8,6 +8,7 @@ author: MCClauneck
 description: A universal plugin for SpigotMC, PaperMC, and FoliaMC
 
 depend: [MCIdentity]
+softdepend: [MCAgents]
 
 commands:
   balance:

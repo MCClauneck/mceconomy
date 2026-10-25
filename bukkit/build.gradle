@@ -27,10 +27,12 @@ dependencies {
     // its own published artifact — the platform is what implements them into the jar.
     compileOnly project(':api')
     compileOnly project(':common')
+    compileOnly project(':tools')
     compileOnly 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
 
     testImplementation project(':api')
     testImplementation project(':common')
+    testImplementation project(':tools')
     testImplementation 'org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'

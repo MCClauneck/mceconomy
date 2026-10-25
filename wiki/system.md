@@ -11,6 +11,7 @@ each platform ships a thin entry point that shades the shared modules into a sin
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure Java data contracts and immutable models, including the `AccountTypes` constants. No platform or database dependencies. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | The central `MCEconomyProvider` and the SQLite, MySQL, PostgreSQL, MongoDB, and central database backends. |
 | `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit layer: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, and the MCIdentity events and listeners. |
+| `tools` | `:tools` | No | Pure Java, read-only MCAgents AI tools and the reflective `AITool` proxy adapter; see [MCAgents AI Tools](agent-tools.md). Shaded by the engine. |
 | `platforms/spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
 | `platforms/papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
 | `platforms/foliamc` | `:platforms:foliamc` | No | Folia entry point and region aware scheduler; bundled into the engine jar. |
