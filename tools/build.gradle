@@ -23,5 +23,5 @@ test {
 }
 
 base {
-    archivesName = "${rootProject.name}-tools"
+    archivesName = "MCEconomyTools"
 }
