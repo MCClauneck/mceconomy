@@ -1,0 +1,27 @@
+plugins {
+    id 'java-library'
+}
+
+// MCAgents AI tools for MCEconomy. Pure Java: no Bukkit, Paper, or Folia types
+// and no compile dependency on MCAgents either — MCAgentsToolAdapter exposes each
+// tool to MCAgents through a reflective proxy of its AITool interface, so this
+// module (and the plugin) builds and runs without MCAgents present. Not
+// published; the engine shades it into the universal jar.
+
+dependencies {
+    // The engine shades api exactly once, so it is compileOnly here, matching common.
+    compileOnly project(':api')
+
+    testImplementation project(':api')
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+base {
+    archivesName = "${rootProject.name}-tools"
+}
