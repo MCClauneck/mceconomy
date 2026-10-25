@@ -120,6 +120,29 @@ currencies:
 The legacy list format (`- coin,Coin,true`) is still accepted. Gold, point, and token default
 to non-transferable.
 
+### AI agent model and key
+
+```yaml
+agents:
+  model: global
+  token: global
+```
+
+The `agents` block picks the OpenRouter model and API key MCEconomy's agent work runs on.
+`global` means "whatever MCAgents is configured with": MCEconomy reads `agents.model` and
+`agents.token` from `plugins/MCAgents/config.yml` at runtime, through MCAgents'
+`getAgentsModel()` and `getAgentsToken()` (MCAgents 6.2.0; an older MCAgents answers with its
+provider's default model and server key). Any other value is used as written — an OpenRouter
+model id such as `openrouter/free`, or an OpenRouter API key — so MCEconomy can run on its own
+model or key while the rest of the server shares MCAgents'. Model ids are lower-cased, and a
+blank or missing value counts as `global`. When a value is `global` and MCAgents is absent, it
+resolves blank.
+
+The resolved pair is exposed as `getAgentsModel()` and `getAgentsToken()` on
+`AbstractMCEconomyPlugin`; the enable log names the model (or `global (MCAgents)`) and never
+the key. MCEconomy's read-only AI tools are called by MCAgents on the player's behalf, so they
+are not affected by this block.
+
 ## Versioning
 
 Versions follow Semantic Versioning (`Major.Minor.Patch`, optionally `-{type}` such as
