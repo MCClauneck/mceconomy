@@ -17,6 +17,7 @@ the SpigotMC API only.
 | `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's active identity. |
 | `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two active identities. |
 | `config/CurrencyConfig` | Parses the `currencies` config section: definitions (display name, transferable) and per-currency head textures. |
+| `config/AgentsSettings`, `config/MCAgentsGlobal` | Read the `agents` config block (`model`, `token`, both `global` by default) and resolve `global` from the running MCAgents plugin's `getAgentsModel()` / `getAgentsToken()` by reflection; exposed as `getAgentsModel()` / `getAgentsToken()` on `AbstractMCEconomyPlugin`. |
 | `event/EconomyTransactionEvent` | Cancellable Bukkit event fired before a balance change; the veto point (e.g. cancel giving money to a player). |
 | `event/EconomyWalletUpdateEvent` | Notification-only Bukkit event fired after a wallet balance changes. |
 | `gui/BalanceGui`, `gui/BalanceGuiHolder`, `gui/BalanceGuiListener` | The paged balance GUI, its inventory holder, and the click listener. |
