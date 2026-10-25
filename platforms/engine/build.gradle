@@ -30,7 +30,7 @@ dependencies {
     // Spigot) and provides every Bukkit/Paper/Folia type the bundled schedulers
     // reference. Platform detection uses reflection strings, so no compile-time
     // Spigot/Paper dependency is needed.
-    compileOnly 'dev.folia:folia-api:26.1.2.build.+'
+    compileOnly 'dev.folia:folia-api:26.3.build.+'
 }
 
 jar {
