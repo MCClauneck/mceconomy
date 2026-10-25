@@ -62,12 +62,14 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 | [`wiki/environment.md`](wiki/environment.md) | Build and publish environment variables and infrastructure examples. |
 | [`wiki/system.md`](wiki/system.md) | System architecture and runtime behavior. |
 | [`wiki/agent-tools.md`](wiki/agent-tools.md) | The optional MCAgents AI tools: names, what they return, and who can use them. |
+| [`wiki/logs/1/2/0/CHANGELOG.md`](wiki/logs/1/2/0/CHANGELOG.md) | Changelog for 1.2.0 — MCAgents AI tools, the Minecraft 26.3 server APIs, and Publish gated on a merged `release/{version}` pull request. |
 
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
 - Per-module details → each module's `README.md`.
 - Developer API integration → [`wiki/api.md`](wiki/api.md).
 - MCAgents AI tools → [`wiki/agent-tools.md`](wiki/agent-tools.md).
+- Release history → [`wiki/logs/`](wiki/logs/), one `{Major}/{Minor}/{Patch}/CHANGELOG.md` per version.
 - MCIdentity integration → [`bukkit/README.md`](bukkit/README.md) and the root
   [`README.md`](README.md).
 - Project overview, build, publishing and requirements → [`README.md`](README.md).
