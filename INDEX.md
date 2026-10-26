@@ -64,6 +64,7 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 | [`wiki/agent-tools.md`](wiki/agent-tools.md) | The optional MCAgents AI tools: names, what they return, and who can use them. |
 | [`wiki/logs/1/2/0/CHANGELOG.md`](wiki/logs/1/2/0/CHANGELOG.md) | Changelog for 1.2.0 — MCAgents AI tools, the Minecraft 26.3 server APIs, and Publish gated on a merged `release/{version}` pull request. |
 | [`wiki/logs/1/3/0/CHANGELOG.md`](wiki/logs/1/3/0/CHANGELOG.md) | Changelog for 1.3.0 — the `agents` block (`model`, `token`), defaulting to MCAgents' own model and key. |
+| [`wiki/logs/1/4/0/CHANGELOG.md`](wiki/logs/1/4/0/CHANGELOG.md) | Changelog for 1.4.0 — MCIdentity becomes a soft dependency; without it, wallets belong to players. |
 
 ## Where to look
 - Build/version config → `gradle.properties`, `build.gradle`, `settings.gradle`.
