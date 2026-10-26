@@ -16,6 +16,12 @@ public final class AccountTypes {
      */
     public static final String IDENTITY = "identity";
 
+    /**
+     * Accounts owned by a player. The account UUID is the player UUID. Used
+     * when MCIdentity is not installed, so each player keeps one set of wallets.
+     */
+    public static final String PLAYER = "player";
+
     private AccountTypes() {
     }
 }

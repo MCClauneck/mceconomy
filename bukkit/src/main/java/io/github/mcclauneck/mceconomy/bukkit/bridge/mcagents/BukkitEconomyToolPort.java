@@ -1,7 +1,6 @@
 package io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents;
 
-import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
-import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
+import io.github.mcclauneck.mceconomy.api.host.AccountSource;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.bukkit.AbstractMCEconomyPlugin;
 import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
@@ -17,7 +16,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Serves the AI tools from the live plugin: the provider's currency cache and
- * asynchronous wallet reads, and the MCIdentity binding.
+ * asynchronous wallet reads, and the account binding (the active MCIdentity
+ * identity when it is installed, the player when it is not).
  *
  * <p>Nothing here touches a player entity — the online check is a lookup in
  * the server's player map and every balance read is the provider's own async
@@ -30,7 +30,7 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     private final AbstractMCEconomyPlugin plugin;
 
     /**
-     * @param plugin The MCEconomy plugin whose provider and identity binding are read.
+     * @param plugin The MCEconomy plugin whose provider and account binding are read.
      */
     public BukkitEconomyToolPort(AbstractMCEconomyPlugin plugin) {
         this.plugin = plugin;
@@ -43,8 +43,8 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
 
     @Override
     public boolean isIdentityReady() {
-        IdentitySource identities = this.plugin.getIdentities();
-        return identities != null && identities.isAvailable();
+        AccountSource accounts = this.plugin.getAccounts();
+        return accounts != null && accounts.isReady();
     }
 
     @Override
@@ -54,11 +54,11 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
 
     @Override
     public CompletableFuture<Optional<UUID>> activeIdentity(UUID playerUuid) {
-        IdentitySource identities = this.plugin.getIdentities();
-        if (identities == null) {
+        AccountSource accounts = this.plugin.getAccounts();
+        if (accounts == null) {
             return CompletableFuture.completedFuture(Optional.empty());
         }
-        return identities.activeIdentity(playerUuid);
+        return accounts.accountUuid(playerUuid);
     }
 
     @Override
@@ -70,9 +70,10 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     @Override
     public CompletableFuture<Long> balance(UUID identityUuid, Currency currency) {
         MCEconomyProvider provider = this.plugin.getProvider();
-        if (provider == null) {
+        AccountSource accounts = this.plugin.getAccounts();
+        if (provider == null || accounts == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("MCEconomy is not enabled"));
         }
-        return provider.getBalance(AccountTypes.IDENTITY, identityUuid, currency);
+        return provider.getBalance(accounts.accountType(), identityUuid, currency);
     }
 }

@@ -1,6 +1,7 @@
 package io.github.mcclauneck.mceconomy.bukkit;
 
 import io.github.mcclauneck.mceconomy.api.database.IEconomyDatabase;
+import io.github.mcclauneck.mceconomy.api.host.AccountSource;
 import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
 import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.BukkitEconomyToolPort;
@@ -14,6 +15,7 @@ import io.github.mcclauneck.mceconomy.bukkit.config.MCAgentsGlobal;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGuiListener;
 import io.github.mcclauneck.mceconomy.bukkit.host.MCIdentityBridge;
 import io.github.mcclauneck.mceconomy.bukkit.listener.IdentityAccountListener;
+import io.github.mcclauneck.mceconomy.bukkit.listener.PlayerAccountListener;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.PlatformScheduler;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.Schedulers;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
@@ -25,6 +27,7 @@ import io.github.mcclauneck.mceconomy.common.database.sqlite.MCEconomySQLite;
 import io.github.mcclauneck.mceconomy.common.http.MCEconomyHttpClient;
 
 import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -41,9 +44,12 @@ import java.util.logging.Logger;
  * point.
  * </p>
  * <p>
- * The economy binds accounts to MCIdentity identities only: the
- * {@link IdentityAccountListener} reacts to identity equip events and never to
- * raw player events, keeping every wallet keyed by the identity UUID.
+ * MCIdentity is optional. When it is installed, accounts belong to identities:
+ * the {@link IdentityAccountListener} reacts to identity equip events, keeping
+ * every wallet keyed by the identity UUID. When it is not installed, accounts
+ * belong to players: the {@link PlayerAccountListener} keys every wallet by the
+ * player UUID. Either way the commands and tools read the active
+ * {@link AccountSource} and never test which binding is live.
  * </p>
  */
 public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
@@ -61,10 +67,17 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
 
     /**
      * Reflective binding to the MCIdentity plugin, resolved during
-     * {@link #onEnable()}. Null when MCIdentity is absent or incompatible, in
-     * which case identity-bound commands report that and do nothing.
+     * {@link #onEnable()}. Null when MCIdentity is absent or incompatible.
      */
     private IdentitySource identities;
+
+    /**
+     * The account binding resolved during {@link #onEnable()}: identity
+     * accounts with MCIdentity, player accounts without it. Null when
+     * MCIdentity is installed but cannot be bound, in which case the commands
+     * report that and do nothing rather than credit the wrong wallet.
+     */
+    private AccountSource accounts;
 
     /**
      * The {@code agents} block of {@code config.yml}: the AI model and
@@ -118,15 +131,10 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         logger.info("Ensuring configured currencies exist...");
         this.provider.ensureDefaultCurrencies().join();
 
-        // Bind to MCIdentity reflectively. The economy keys every wallet by identity
-        // UUID, so a missing or incompatible identity plugin is fatal to trading —
-        // but it is reported and degraded, not thrown, so the server still starts.
-        MCIdentityBridge identityBridge = MCIdentityBridge.resolve(this).orElse(null);
-        this.identities = identityBridge;
-        if (identityBridge != null) {
-            // Give every equipped MCIdentity identity its own "identity" economy account
-            new IdentityAccountListener(this.provider, logger).register(this, identityBridge);
-        }
+        // MCIdentity is optional. Installed, wallets belong to identities; absent,
+        // they belong to players. Installed but incompatible is reported and leaves
+        // the commands inert, so money never lands in the wrong wallet.
+        bindAccounts(logger);
 
         // The /balance GUI and /pay transfers, both bound to active identities
         getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
@@ -139,17 +147,43 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     }
 
     /**
+     * Resolves the account binding: identity accounts when MCIdentity is
+     * installed and bound, player accounts when it is not installed.
+     */
+    private void bindAccounts(Logger logger) {
+        Plugin identityHost = getServer().getPluginManager().getPlugin(MCIdentityBridge.PLUGIN_NAME);
+        if (identityHost == null) {
+            this.identities = null;
+            this.accounts = AccountSource.players();
+            new PlayerAccountListener(this.provider, logger).register(this);
+            logger.info(MCIdentityBridge.PLUGIN_NAME + " is not installed; wallets belong to players.");
+            return;
+        }
+
+        MCIdentityBridge identityBridge = MCIdentityBridge.resolve(this).orElse(null);
+        this.identities = identityBridge;
+        if (identityBridge == null) {
+            this.accounts = null;
+            return;
+        }
+        this.accounts = AccountSource.identities(identityBridge);
+        // Give every equipped MCIdentity identity its own "identity" economy account
+        new IdentityAccountListener(this.provider, logger).register(this, identityBridge);
+        logger.info("Found " + MCIdentityBridge.PLUGIN_NAME + "; wallets belong to active identities.");
+    }
+
+    /**
      * Wires the {@code /balance} and {@code /pay} executors declared in
      * {@code plugin.yml}.
      */
     private void registerCommands(Logger logger) {
         PluginCommand balance = getCommand("balance");
         if (balance != null) {
-            balance.setExecutor(new BalanceCommand(this.provider, this.identities, this.currencyTextures, logger));
+            balance.setExecutor(new BalanceCommand(this.provider, this.accounts, this.currencyTextures, logger));
         }
         PluginCommand pay = getCommand("pay");
         if (pay != null) {
-            pay.setExecutor(new PayCommand(this.provider, this.identities, logger));
+            pay.setExecutor(new PayCommand(this.provider, this.accounts, logger));
             pay.setTabCompleter(new PayTabCompleter(this.provider));
         }
     }
@@ -231,6 +265,16 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
      */
     public IdentitySource getIdentities() {
         return this.identities;
+    }
+
+    /**
+     * Gets the account binding money is keyed by: the active identity when
+     * MCIdentity is installed, the player when it is not.
+     * @return The binding, or {@code null} when MCIdentity is installed but
+     *         could not be bound.
+     */
+    public AccountSource getAccounts() {
+        return this.accounts;
     }
 
     /**

@@ -1,11 +1,10 @@
 package io.github.mcclauneck.mceconomy.bukkit.commands;
 
-import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGui;
 import io.github.mcclauneck.mceconomy.bukkit.gui.CurrencyBalanceEntry;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
-import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
+import io.github.mcclauneck.mceconomy.api.host.AccountSource;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -23,12 +22,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * {@code /balance} — opens the paged balance GUI for the sender's <em>active
- * identity</em>. No permission is required.
+ * {@code /balance} — opens the paged balance GUI for the sender's account: the
+ * <em>active identity</em> with MCIdentity, the player without it. No
+ * permission is required.
  * <p>
- * Balances belong to identities, never to the raw player, so the command first
- * resolves the active MCIdentity identity and then reads one wallet per cached
- * currency asynchronously before opening the GUI on the player's thread.
+ * The command first resolves the account through the {@link AccountSource} and
+ * then reads one wallet per cached currency asynchronously before opening the
+ * GUI on the player's thread.
  */
 public class BalanceCommand implements CommandExecutor {
 
@@ -40,9 +40,9 @@ public class BalanceCommand implements CommandExecutor {
     private final Map<String, String> currencyTextures;
 
     /**
-     * The reflective MCIdentity binding used to resolve the active identity.
+     * The account binding used to resolve the sender's account.
      */
-    private final IdentitySource identities;
+    private final AccountSource accounts;
 
     /**
      * Logger used to report failures while assembling the GUI data.
@@ -52,14 +52,14 @@ public class BalanceCommand implements CommandExecutor {
     /**
      * Constructs the command.
      * @param provider The central economy provider.
-     * @param identities The MCIdentity binding, or {@code null} when unavailable.
+     * @param accounts The account binding, or {@code null} when unavailable.
      * @param currencyTextures Base64 head textures keyed by currency system code.
      * @param logger The plugin logger for error reporting.
      */
-    public BalanceCommand(MCEconomyProvider provider, IdentitySource identities,
+    public BalanceCommand(MCEconomyProvider provider, AccountSource accounts,
                           Map<String, String> currencyTextures, Logger logger) {
         this.provider = provider;
-        this.identities = identities;
+        this.accounts = accounts;
         this.currencyTextures = currencyTextures;
         this.logger = logger;
     }
@@ -70,18 +70,19 @@ public class BalanceCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Only players can open the balance GUI.");
             return true;
         }
-        if (this.identities == null || !this.identities.isAvailable()) {
+        if (this.accounts == null || !this.accounts.isReady()) {
             player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
             return true;
         }
 
-        this.identities.activeIdentity(player.getUniqueId())
-                .thenAccept(optIdentity -> optIdentity.ifPresentOrElse(
-                        identityUuid -> openFor(player, identityUuid),
+        AccountSource source = this.accounts;
+        source.accountUuid(player.getUniqueId())
+                .thenAccept(optAccount -> optAccount.ifPresentOrElse(
+                        accountUuid -> openFor(player, source.accountType(), accountUuid),
                         () -> player.sendMessage(ChatColor.RED
                                 + "You have no active identity. Balances belong to your active identity, so equip one first.")))
                 .exceptionally(throwable -> {
-                    this.logger.log(Level.SEVERE, "Failed to resolve the active identity for /balance", throwable);
+                    this.logger.log(Level.SEVERE, "Failed to resolve the account for /balance", throwable);
                     player.sendMessage(ChatColor.RED + "Could not load your balance. Try again later.");
                     return null;
                 });
@@ -89,13 +90,13 @@ public class BalanceCommand implements CommandExecutor {
     }
 
     /**
-     * Reads every currency balance of the identity and opens the GUI.
+     * Reads every currency balance of the account and opens the GUI.
      */
-    private void openFor(Player player, UUID identityUuid) {
+    private void openFor(Player player, String accountType, UUID accountUuid) {
         List<Currency> currencies = orderedCurrencies(this.provider);
         List<CompletableFuture<CurrencyBalanceEntry>> rows = new ArrayList<>(currencies.size());
         for (Currency currency : currencies) {
-            rows.add(provider.getBalance(AccountTypes.IDENTITY, identityUuid, currency)
+            rows.add(provider.getBalance(accountType, accountUuid, currency)
                     .thenApply(balance -> new CurrencyBalanceEntry(
                             currency.systemCode(),
                             currency.displayName(),
@@ -110,7 +111,7 @@ public class BalanceCommand implements CommandExecutor {
                     BalanceGui.open(player, entries, 0);
                 })
                 .exceptionally(throwable -> {
-                    this.logger.log(Level.SEVERE, "Failed to load balances for identity " + identityUuid, throwable);
+                    this.logger.log(Level.SEVERE, "Failed to load balances for " + accountType + " " + accountUuid, throwable);
                     player.sendMessage(ChatColor.RED + "Could not load your balance. Try again later.");
                     return null;
                 });

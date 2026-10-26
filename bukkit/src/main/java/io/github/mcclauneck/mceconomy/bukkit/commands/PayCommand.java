@@ -1,12 +1,11 @@
 package io.github.mcclauneck.mceconomy.bukkit.commands;
 
-import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.api.models.LogScope;
 import io.github.mcclauneck.mceconomy.bukkit.event.EconomyTransactionEvent;
 import io.github.mcclauneck.mceconomy.bukkit.event.EconomyWalletUpdateEvent;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
-import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
+import io.github.mcclauneck.mceconomy.api.host.AccountSource;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,12 +22,13 @@ import java.util.logging.Logger;
 
 /**
  * {@code /pay <player> <currency> <amount>} — moves money from the sender's
- * <em>active identity</em> to the target player's <em>active identity</em>.
+ * account to the target player's account: each side's <em>active identity</em>
+ * with MCIdentity, each player without it.
  * <p>
- * Money belongs to identities, never to the raw player, so both sides must
- * have an identity equipped. The transfer is atomic and fully logged: the
- * shared provider writes a {@code send} log row for the paying identity, a
- * {@code receive} row for the receiving identity, and a transaction receipt
+ * With MCIdentity both sides must have an identity equipped. The transfer is
+ * atomic and fully logged: the shared provider writes a {@code send} log row
+ * for the paying account, a {@code receive} row for the receiving account,
+ * and a transaction receipt
  * row keyed by a fresh transaction UUID. Non-transferable currencies are
  * rejected before any balance is touched, and the
  * {@link EconomyTransactionEvent} veto convention is honored for both sides.
@@ -42,9 +42,9 @@ public class PayCommand implements CommandExecutor {
     private final MCEconomyProvider provider;
 
     /**
-     * The reflective MCIdentity binding used to resolve both sides' identities.
+     * The account binding used to resolve both sides' accounts.
      */
-    private final IdentitySource identities;
+    private final AccountSource accounts;
 
     /**
      * Logger used to report unexpected transfer failures.
@@ -54,12 +54,12 @@ public class PayCommand implements CommandExecutor {
     /**
      * Constructs the command.
      * @param provider The central economy provider.
-     * @param identities The MCIdentity binding, or {@code null} when unavailable.
+     * @param accounts The account binding, or {@code null} when unavailable.
      * @param logger The plugin logger for error reporting.
      */
-    public PayCommand(MCEconomyProvider provider, IdentitySource identities, Logger logger) {
+    public PayCommand(MCEconomyProvider provider, AccountSource accounts, Logger logger) {
         this.provider = provider;
-        this.identities = identities;
+        this.accounts = accounts;
         this.logger = logger;
     }
 
@@ -105,22 +105,23 @@ public class PayCommand implements CommandExecutor {
             return true;
         }
 
-        if (this.identities == null || !this.identities.isAvailable()) {
+        if (this.accounts == null || !this.accounts.isReady()) {
             player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
             return true;
         }
 
-        // Payments move between ACTIVE IDENTITIES, never between raw players.
+        // Payments move between accounts: active identities with MCIdentity, players without.
         long finalAmount = amount;
-        IdentitySource identity = this.identities;
-        identity.activeIdentity(player.getUniqueId())
-                .thenCombine(identity.activeIdentity(target.getUniqueId()),
+        AccountSource source = this.accounts;
+        source.accountUuid(player.getUniqueId())
+                .thenCombine(source.accountUuid(target.getUniqueId()),
                         (senderIdentity, targetIdentity) -> {
-                            pay(player, target, currency, finalAmount, senderIdentity, targetIdentity);
+                            pay(player, target, currency, finalAmount, source.accountType(),
+                                    senderIdentity, targetIdentity);
                             return null;
                         })
                 .exceptionally(throwable -> {
-                    this.logger.log(Level.SEVERE, "Failed to resolve identities for /pay", throwable);
+                    this.logger.log(Level.SEVERE, "Failed to resolve accounts for /pay", throwable);
                     player.sendMessage(ChatColor.RED + "The payment failed. Try again later.");
                     return null;
                 });
@@ -128,10 +129,11 @@ public class PayCommand implements CommandExecutor {
     }
 
     /**
-     * Validates both identities, honors the transaction veto events, and runs
-     * the logged transfer.
+     * Validates both accounts, honors the transaction veto events, and runs
+     * the logged transfer. An empty side only happens with MCIdentity, when
+     * that player has no identity equipped.
      */
-    private void pay(Player player, Player target, Currency currency, long amount,
+    private void pay(Player player, Player target, Currency currency, long amount, String accountType,
                      Optional<UUID> senderIdentity, Optional<UUID> targetIdentity) {
         if (senderIdentity.isEmpty()) {
             player.sendMessage(ChatColor.RED
@@ -147,10 +149,10 @@ public class PayCommand implements CommandExecutor {
 
         // Honor the shared veto convention for both the debit and the credit.
         EconomyTransactionEvent debit = new EconomyTransactionEvent(
-                AccountTypes.IDENTITY, from, currency.systemCode(), amount, LogScope.SEND);
+                accountType, from, currency.systemCode(), amount, LogScope.SEND);
         Bukkit.getPluginManager().callEvent(debit);
         EconomyTransactionEvent credit = new EconomyTransactionEvent(
-                AccountTypes.IDENTITY, to, currency.systemCode(), amount, LogScope.RECEIVE);
+                accountType, to, currency.systemCode(), amount, LogScope.RECEIVE);
         Bukkit.getPluginManager().callEvent(credit);
         if (debit.isCancelled() || credit.isCancelled()) {
             player.sendMessage(ChatColor.RED + "The payment was blocked by another plugin.");
@@ -159,12 +161,12 @@ public class PayCommand implements CommandExecutor {
 
         UUID transactionUuid = UUID.randomUUID();
         provider.transferBalance(
-                        AccountTypes.IDENTITY, from,
-                        AccountTypes.IDENTITY, to,
+                        accountType, from,
+                        accountType, to,
                         currency, amount, transactionUuid, REFERENCE_TYPE, REFERENCE_ID)
                 .thenAccept(success -> {
-                    announceNewBalance(from, currency);
-                    announceNewBalance(to, currency);
+                    announceNewBalance(accountType, from, currency);
+                    announceNewBalance(accountType, to, currency);
                     String formatted = String.format("%,d", amount) + " " + currency.displayName();
                     player.sendMessage(ChatColor.GREEN + "You paid " + formatted + " to " + target.getName() + ".");
                     target.sendMessage(ChatColor.GREEN + "You received " + formatted + " from " + player.getName() + ".");
@@ -175,7 +177,7 @@ public class PayCommand implements CommandExecutor {
                         player.sendMessage(ChatColor.RED + "You do not have enough " + currency.displayName() + ".");
                     } else {
                         this.logger.log(Level.SEVERE, "Failed to transfer " + amount + " " + currency.systemCode()
-                                + " from identity " + from + " to identity " + to, throwable);
+                                + " from " + accountType + " " + from + " to " + accountType + " " + to, throwable);
                         player.sendMessage(ChatColor.RED + "The payment failed. Try again later.");
                     }
                     return null;
@@ -184,11 +186,11 @@ public class PayCommand implements CommandExecutor {
 
     /**
      * Fires the {@link EconomyWalletUpdateEvent} notification with the
-     * identity's fresh balance, so other plugins can react to the payment.
+     * account's fresh balance, so other plugins can react to the payment.
      */
-    private void announceNewBalance(UUID identityUuid, Currency currency) {
-        provider.getBalance(AccountTypes.IDENTITY, identityUuid, currency).thenAccept(balance ->
+    private void announceNewBalance(String accountType, UUID identityUuid, Currency currency) {
+        provider.getBalance(accountType, identityUuid, currency).thenAccept(balance ->
                 Bukkit.getPluginManager().callEvent(new EconomyWalletUpdateEvent(
-                        AccountTypes.IDENTITY, identityUuid, currency.systemCode(), balance)));
+                        accountType, identityUuid, currency.systemCode(), balance)));
     }
 }
