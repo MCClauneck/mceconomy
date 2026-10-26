@@ -148,9 +148,10 @@ agents:
 ```
 
 The nine modality keys (`text`, `image`, `video`, `speech`, `decisions`, `embeddings`,
-`rerank`, `transcription`, `audio`) ship as `global`. This release does not read them
-yet: its model still comes from `agents.model` when an older `config.yml` carries it,
-and otherwise from MCAgents.
+`rerank`, `transcription`, `audio`) ship as `global`. Each is read on its own:
+`global` resolves the same key from MCAgents (6.3.0 or later; an older MCAgents
+resolves only the text model), and any other value is an OpenRouter model id. An
+`agents.model` left over from an older `config.yml` is read as the text model.
 
 The `agents` block picks the OpenRouter model and API key MCEconomy's agent work runs on.
 `global` means "whatever MCAgents is configured with": MCEconomy reads `agents.model` and
