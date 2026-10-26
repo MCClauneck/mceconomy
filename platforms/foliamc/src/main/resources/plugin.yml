@@ -7,15 +7,14 @@ folia-supported: true
 author: MCClauneck
 description: A plugin for FoliaMC
 
-depend: [MCIdentity]
-softdepend: [MCAgents]
+softdepend: [MCIdentity, MCAgents]
 
 commands:
   balance:
-    description: Open the balance GUI for your active identity.
+    description: Open your balance GUI (your active identity with MCIdentity).
     usage: /balance
   pay:
-    description: Pay another player's active identity.
+    description: Pay another player (their active identity with MCIdentity).
     usage: /pay <player> <currency> <amount>
 
 libraries:

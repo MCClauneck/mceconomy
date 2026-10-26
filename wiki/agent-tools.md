@@ -18,7 +18,7 @@ All tools are filed under the MCAgents category `economy`.
 
 | Tool | Arguments | Returns |
 | --- | --- | --- |
-| `economy_get_my_balances` | `currency` (optional): a currency code such as `coin` | The balances held by the player's **active MCIdentity identity**, one line per currency (`Coin (coin): 1,234`), or only the requested currency. Same wallets and order as `/balance`. |
+| `economy_get_my_balances` | `currency` (optional): a currency code such as `coin` | The balances held by the player's account — the **active MCIdentity identity**, or the player when MCIdentity is not installed —, one line per currency (`Coin (coin): 1,234`), or only the requested currency. Same wallets and order as `/balance`. |
 | `economy_list_currencies` | none | Every currency on the server: its code, display name, and whether it can be sent with `/pay`. |
 
 Wallets belong to identities, not to the raw player, exactly as for `/balance`. A player with no
@@ -39,5 +39,5 @@ They are not compiled against MCAgents: `MCAgentsToolAdapter` exposes each tool 
 `java.lang.reflect.Proxy` of MCAgents' `AITool` interface, loaded from the MCAgents plugin's
 classloader, and `bukkit/bridge/mcagents/MCAgentsToolRegistrar` registers those proxies through
 the MCAgents provider. The tools read through `EconomyToolPort`, implemented in `bukkit` over the
-provider's asynchronous wallet reads and the MCIdentity binding, so no tool touches a player
+provider's asynchronous wallet reads and the account binding, so no tool touches a player
 entity and every database call stays asynchronous.

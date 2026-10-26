@@ -67,25 +67,35 @@ own entry point classes, which the engine bundles.
 ## MCIdentity integration
 
 MCEconomy integrates with the **MCIdentity** plugin (`MCOriax/mcidentity`) and declares it as
-a hard dependency (`depend: [MCIdentity]` in every platform `plugin.yml`), so MCIdentity must
-be installed on the server and always initializes first.
+a soft dependency (`softdepend: [MCIdentity, MCAgents]` in every platform `plugin.yml`), so
+MCIdentity is optional and, when installed, always initializes first.
 
-Each MCIdentity identity is a fully separate character, so economy data is bound to the
-**identity UUID** — never the base player UUID. When a player equips an identity, the shared
+Which account money belongs to depends on whether MCIdentity is installed. The commands and
+AI tools read the active `AccountSource` (`api/host/AccountSource`) and take one path for both:
+
+| Server | Account type | Account UUID | Created by |
+| --- | --- | --- | --- |
+| MCIdentity installed | `identity` (`AccountTypes.IDENTITY`) | the active identity's UUID | `IdentityAccountListener`, on identity equip |
+| MCIdentity not installed | `player` (`AccountTypes.PLAYER`) | the player's UUID | `PlayerAccountListener`, on join |
+
+Each MCIdentity identity is a fully separate character, so with MCIdentity economy data is
+bound to the **identity UUID** — never the base player UUID. When a player equips an identity, the shared
 `IdentityAccountListener` ensures an economy account exists for that identity using the
 account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every identity a
 player owns therefore keeps its own wallets and transaction logs.
 
 MCIdentity is **not** a build dependency. It is bound by runtime reflection: at enable time
 `bukkit/host/MCIdentityBridge` resolves the provider and the equip event through the
-MCIdentity plugin's own classloader (the `depend` declaration guarantees it loaded first).
+MCIdentity plugin's own classloader (the `softdepend` declaration guarantees it loaded first).
 No `io.github.mcoriax` artifact appears anywhere in this build, so the project compiles
 without GitHub Packages credentials, does not break when MCIdentity republishes under new
 coordinates, and passes no MCIdentity dependency on to consumers of the published
 `api`/`common`/`bukkit` libraries. `gradle.properties` records the MCIdentity release the
 bridge targets (`mcidentity-version`, currently `4.0.1`). A missing or incompatible
-MCIdentity is logged once and leaves identity wallets unavailable rather than stopping the
-server from starting.
+MCIdentity is logged once and leaves `/balance` and `/pay` unavailable rather than stopping the
+server from starting; MCEconomy never falls back to player wallets when MCIdentity is installed,
+so money cannot land in the wrong wallet. Wallets created in one mode are not moved when the
+other mode is switched on later.
 
 ## Developer API
 
@@ -97,12 +107,13 @@ Bukkit events (including how to cancel giving money to a player).
 ## Commands
 
 Both commands are available to every player — no permission is required — and both operate on
-the player's **active MCIdentity identity**, never on the raw player account:
+the player's account: the **active MCIdentity identity** when MCIdentity is installed, the
+player otherwise:
 
 | Command | Description |
 | --- | --- |
-| `/balance` | Opens a paged GUI showing the active identity's balance for every currency, one custom head per currency (texture configurable per currency). The window sizes itself to the currencies on the page, growing one row for every nine currencies and padding leftover slots with a black glass pane. |
-| `/pay <player> <currency> <amount>` | Pays another player's active identity. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
+| `/balance` | Opens a paged GUI showing the account's balance for every currency, one custom head per currency (texture configurable per currency). The window sizes itself to the currencies on the page, growing one row for every nine currencies and padding leftover slots with a black glass pane. |
+| `/pay <player> <currency> <amount>` | Pays another player's account. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
 
 ## Configuration
 
@@ -156,8 +167,9 @@ source of truth for every module.
   not already installed; otherwise install a JDK 25 locally.
 - **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer.
   The single universal jar detects the server automatically, so the same jar runs on all three.
-- **MCIdentity plugin:** MCEconomy hard-depends on the MCIdentity plugin
-  (`depend: [MCIdentity]`), so it must be installed on the server.
+- **MCIdentity plugin (optional):** MCEconomy soft-depends on MCIdentity
+  (`softdepend: [MCIdentity, MCAgents]`). With it, money belongs to identities; without it,
+  money belongs to players.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
 - **Credentials (GitHub Packages):** only **publishing** needs them — a token with the

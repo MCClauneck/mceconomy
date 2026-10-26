@@ -7,8 +7,10 @@ job, or quest-reward system) with **MCEconomy**. The economy system is exposed
 through the pure-Java `api`/`common` modules and the Bukkit event layer in
 `bukkit`, all published to GitHub Packages.
 
-MCEconomy is designed to sit on top of **MCIdentity**: every economy account is
-bound to an *identity*, so a single player's money is kept separate per character.
+MCEconomy is designed to sit on top of **MCIdentity**: with it installed, every
+economy account is bound to an *identity*, so a single player's money is kept
+separate per character. MCIdentity is a soft dependency: without it, accounts are
+bound to the player (`AccountTypes.PLAYER`, keyed by the player UUID).
 See [§4](#4-architecture--bind-money-to-the-identity-not-the-player).
 
 **Contents**
@@ -160,6 +162,10 @@ premium or reward currency) can never move between accounts —
 An account is identified by an **account type** plus a **UUID**. For
 MCIdentity-bound money the type is `AccountTypes.IDENTITY` and the UUID is the
 **identity UUID** (see [§4](#4-architecture--bind-money-to-the-identity-not-the-player)).
+On a server without MCIdentity the type is `AccountTypes.PLAYER` and the UUID is
+the **player UUID**. `AbstractMCEconomyPlugin#getAccounts()` returns the
+`AccountSource` MCEconomy itself uses, so a consumer can follow the same rule
+instead of hardcoding a type.
 Wallets are created lazily, so you rarely need `createAccount` — but it is
 idempotent and safe to call to guarantee the account row exists:
 
