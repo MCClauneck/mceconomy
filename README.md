@@ -135,9 +135,22 @@ to non-transferable.
 
 ```yaml
 agents:
-  model: global
   token: global
+  text: global
+  image: global
+  video: global
+  speech: global
+  decisions: global
+  embeddings: global
+  rerank: global
+  transcription: global
+  audio: global
 ```
+
+The nine modality keys (`text`, `image`, `video`, `speech`, `decisions`, `embeddings`,
+`rerank`, `transcription`, `audio`) ship as `global`. This release does not read them
+yet: its model still comes from `agents.model` when an older `config.yml` carries it,
+and otherwise from MCAgents.
 
 The `agents` block picks the OpenRouter model and API key MCEconomy's agent work runs on.
 `global` means "whatever MCAgents is configured with": MCEconomy reads `agents.model` and
