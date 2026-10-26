@@ -84,7 +84,7 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
      * OpenRouter API key this plugin's agent work runs on, each {@code global}
      * by default to share MCAgents' own. Read during {@link #onEnable()}.
      */
-    private AgentsSettings agentsSettings = new AgentsSettings(AgentsSettings.GLOBAL, AgentsSettings.GLOBAL);
+    private AgentsSettings agentsSettings = new AgentsSettings(AgentsSettings.GLOBAL, null);
 
     /**
      * Supplies the platform specific scheduler installed during {@link #onEnable()}.
@@ -106,10 +106,10 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
             return;
         }
 
-        // The AI model and key: 'global' defers to MCAgents' own agents.model / agents.token
+        // The AI model and key: 'global' defers to MCAgents' own agents.{modality} / agents.token
         this.agentsSettings = AgentsSettings.read(getConfig());
-        logger.info("AI agent model: " + (this.agentsSettings.globalModel()
-            ? "global (MCAgents)" : this.agentsSettings.model()));
+        logger.info("AI agent model: " + (this.agentsSettings.globalModel(AgentsSettings.Modality.TEXT)
+            ? "global (MCAgents)" : this.agentsSettings.model(AgentsSettings.Modality.TEXT)));
 
         IEconomyDatabase database = createDatabase(logger);
 
@@ -287,12 +287,12 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     }
 
     /**
-     * Gets the AI model this plugin's agent work runs on: {@code agents.model},
+     * Gets the AI model this plugin's agent work runs on: {@code agents.text},
      * or MCAgents' own model when it is {@code global}.
      * @return The model id, blank when it is global and MCAgents has none.
      */
     public String getAgentsModel() {
-        return this.agentsSettings.resolveModel(new MCAgentsGlobal());
+        return this.agentsSettings.resolveModel(AgentsSettings.Modality.TEXT, new MCAgentsGlobal());
     }
 
     /**
