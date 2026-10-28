@@ -6,31 +6,20 @@ import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
 import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.BukkitEconomyToolPort;
 import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.MCAgentsToolRegistrar;
-import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
-import io.github.mcclauneck.mceconomy.bukkit.commands.PayCommand;
-import io.github.mcclauneck.mceconomy.bukkit.commands.PayTabCompleter;
+import io.github.mcclauneck.mceconomy.bukkit.commands.CommandRegistrar;
 import io.github.mcclauneck.mceconomy.bukkit.config.AgentsSettings;
 import io.github.mcclauneck.mceconomy.bukkit.config.CurrencyConfig;
 import io.github.mcclauneck.mceconomy.bukkit.config.MCAgentsGlobal;
+import io.github.mcclauneck.mceconomy.bukkit.database.EconomyDatabaseFactory;
 import io.github.mcclauneck.mceconomy.bukkit.gui.BalanceGuiListener;
-import io.github.mcclauneck.mceconomy.bukkit.host.MCIdentityBridge;
-import io.github.mcclauneck.mceconomy.bukkit.listener.IdentityAccountListener;
-import io.github.mcclauneck.mceconomy.bukkit.listener.PlayerAccountListener;
+import io.github.mcclauneck.mceconomy.bukkit.host.AccountBinding;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.PlatformScheduler;
 import io.github.mcclauneck.mceconomy.bukkit.scheduler.Schedulers;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
-import io.github.mcclauneck.mceconomy.common.central.MCEconomyAPI;
-import io.github.mcclauneck.mceconomy.common.database.mongodb.MCEconomyMongoDB;
-import io.github.mcclauneck.mceconomy.common.database.mysql.MCEconomyMySQL;
-import io.github.mcclauneck.mceconomy.common.database.postgresql.MCEconomyPostgreSQL;
-import io.github.mcclauneck.mceconomy.common.database.sqlite.MCEconomySQLite;
 import io.github.mcclauneck.mceconomy.common.http.MCEconomyHttpClient;
 
-import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -44,12 +33,12 @@ import java.util.logging.Logger;
  * point.
  * </p>
  * <p>
- * MCIdentity is optional. When it is installed, accounts belong to identities:
- * the {@link IdentityAccountListener} reacts to identity equip events, keeping
- * every wallet keyed by the identity UUID. When it is not installed, accounts
- * belong to players: the {@link PlayerAccountListener} keys every wallet by the
- * player UUID. Either way the commands and tools read the active
- * {@link AccountSource} and never test which binding is live.
+ * The bootstrap only sequences the steps; each step lives in its own class:
+ * {@link EconomyDatabaseFactory} picks the backend, {@link CurrencyConfig}
+ * reads the currencies, {@link AccountBinding} decides whether wallets belong
+ * to MCIdentity identities or to players, and {@link CommandRegistrar} wires
+ * the commands. The commands and tools read the active {@link AccountSource}
+ * and never test which binding is live.
  * </p>
  */
 public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
@@ -111,7 +100,7 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         logger.info("AI agent model: " + (this.agentsSettings.globalModel(AgentsSettings.Modality.TEXT)
             ? "global (MCAgents)" : this.agentsSettings.model(AgentsSettings.Modality.TEXT)));
 
-        IEconomyDatabase database = createDatabase(logger);
+        IEconomyDatabase database = EconomyDatabaseFactory.create(getConfig(), getDataFolder(), logger);
 
         // Ensure database tables are fully created before proceeding
         database.initialize().join();
@@ -134,109 +123,18 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         // MCIdentity is optional. Installed, wallets belong to identities; absent,
         // they belong to players. Installed but incompatible is reported and leaves
         // the commands inert, so money never lands in the wrong wallet.
-        bindAccounts(logger);
+        AccountBinding binding = AccountBinding.bind(this, this.provider, logger);
+        this.identities = binding.identities();
+        this.accounts = binding.accounts();
 
         // The /balance GUI and /pay transfers, both bound to active identities
         getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
-        registerCommands(logger);
+        CommandRegistrar.register(this, this.provider, this.accounts, this.currencyTextures, logger);
 
         // Optional: expose read-only balance tools to MCAgents when it is installed
         MCAgentsToolRegistrar.register(new BukkitEconomyToolPort(this), logger);
 
         logger.info("MCEconomy Plugin has been successfully enabled!");
-    }
-
-    /**
-     * Resolves the account binding: identity accounts when MCIdentity is
-     * installed and bound, player accounts when it is not installed.
-     */
-    private void bindAccounts(Logger logger) {
-        Plugin identityHost = getServer().getPluginManager().getPlugin(MCIdentityBridge.PLUGIN_NAME);
-        if (identityHost == null) {
-            this.identities = null;
-            this.accounts = AccountSource.players();
-            new PlayerAccountListener(this.provider, logger).register(this);
-            logger.info(MCIdentityBridge.PLUGIN_NAME + " is not installed; wallets belong to players.");
-            return;
-        }
-
-        MCIdentityBridge identityBridge = MCIdentityBridge.resolve(this).orElse(null);
-        this.identities = identityBridge;
-        if (identityBridge == null) {
-            this.accounts = null;
-            return;
-        }
-        this.accounts = AccountSource.identities(identityBridge);
-        // Give every equipped MCIdentity identity its own "identity" economy account
-        new IdentityAccountListener(this.provider, logger).register(this, identityBridge);
-        logger.info("Found " + MCIdentityBridge.PLUGIN_NAME + "; wallets belong to active identities.");
-    }
-
-    /**
-     * Wires the {@code /balance} and {@code /pay} executors declared in
-     * {@code plugin.yml}.
-     */
-    private void registerCommands(Logger logger) {
-        PluginCommand balance = getCommand("balance");
-        if (balance != null) {
-            balance.setExecutor(new BalanceCommand(this.provider, this.accounts, this.currencyTextures, logger));
-        }
-        PluginCommand pay = getCommand("pay");
-        if (pay != null) {
-            pay.setExecutor(new PayCommand(this.provider, this.accounts, logger));
-            pay.setTabCompleter(new PayTabCompleter(this.provider));
-        }
-    }
-
-    /**
-     * Builds the storage backend selected by {@code database.type} in config.yml —
-     * SQLite (the default), MySQL, PostgreSQL, MongoDB, or the central server.
-     *
-     * @param logger The plugin logger used to report the chosen backend.
-     * @return The configured database.
-     */
-    private IEconomyDatabase createDatabase(Logger logger) {
-        String dbType = getConfig().getString("database.type", "sqlite").toLowerCase();
-
-        switch (dbType) {
-            case "postgresql":
-                logger.info("Initializing PostgreSQL Database...");
-                return new MCEconomyPostgreSQL(
-                    getConfig().getString("database.postgresql.host"),
-                    getConfig().getInt("database.postgresql.port"),
-                    getConfig().getString("database.postgresql.database"),
-                    getConfig().getString("database.postgresql.username"),
-                    getConfig().getString("database.postgresql.password")
-                );
-            case "mysql":
-                logger.info("Initializing MySQL Database...");
-                return new MCEconomyMySQL(
-                    getConfig().getString("database.mysql.host"),
-                    getConfig().getInt("database.mysql.port"),
-                    getConfig().getString("database.mysql.database"),
-                    getConfig().getString("database.mysql.username"),
-                    getConfig().getString("database.mysql.password")
-                );
-            case "central":
-                logger.info("Initializing Central Server Database...");
-                return new MCEconomyAPI(
-                    getConfig().getString("central_server.url"),
-                    getConfig().getString("central_server.token"),
-                    getConfig().getInt("central_server.timeout_seconds")
-                );
-            case "mongodb":
-                logger.info("Initializing MongoDB Database...");
-                return new MCEconomyMongoDB(
-                    getConfig().getString("database.mongodb.uri"),
-                    getConfig().getString("database.mongodb.database")
-                );
-            default:
-            case "sqlite":
-                logger.info("Initializing SQLite Database...");
-                return new MCEconomySQLite(
-                    new File(getDataFolder(), getConfig().getString("database.sqlite.file", "economy.db"))
-                );
-        }
     }
 
     @Override

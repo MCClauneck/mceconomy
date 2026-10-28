@@ -13,7 +13,10 @@ the SpigotMC API only.
 
 | Component | Description |
 | --- | --- |
-| `AbstractMCEconomyPlugin` | Shared plugin bootstrap (config, database wiring, provider, listener and command registration) extended by every platform entry point. |
+| `AbstractMCEconomyPlugin` | Shared plugin bootstrap extended by every platform entry point; it sequences the enable steps below and exposes the provider, account binding, and agents settings. |
+| `database/EconomyDatabaseFactory` | Builds the backend `database.type` selects (SQLite, MySQL, PostgreSQL, MongoDB, or the central server). |
+| `host/AccountBinding` | Decides at enable time whether wallets belong to MCIdentity identities or to players, and registers the matching account listener. |
+| `commands/CommandRegistrar` | Wires the `/balance` and `/pay` executors and the `/pay` tab completer. |
 | `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's active identity. |
 | `commands/CommandPermissions` | The `mcclauneck.mceconomy.command.*` nodes the commands check. |
 | `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two active identities. |

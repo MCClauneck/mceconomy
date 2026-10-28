@@ -32,7 +32,7 @@ mceconomy/
 | Module | Gradle path | Published? | Summary |
 | --- | --- | --- | --- |
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure-Java contracts and immutable models, including the `AccountTypes` constants. |
-| `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` and database backends. |
+| `common` | `:common` | Yes (`io.github.mcclauneck:common`) | `MCEconomyProvider` (a facade over `currency/CurrencyRegistry` and `balance/BalanceLedger`) and database backends, the SQL ones sharing `database/sql/AbstractSqlEconomyDatabase`. |
 | `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit core: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, events, listeners, and the reflective MCIdentity binding under `host/`. |
 | `tools` | `:tools` | No | Pure-Java, read-only MCAgents AI tools (`economy_get_my_balances`, `economy_list_currencies`) and the reflective `AITool` proxy adapter; registered by `bukkit/bridge/mcagents/MCAgentsToolRegistrar` when MCAgents is installed, shaded by the engine. |
 | `spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
