@@ -46,3 +46,22 @@ revoke `/balance` or `/pay` from a group.
 - Docs: README gained the permission column and a Permissions table; `wiki/requirements.md`
   and `bukkit/README.md` name the nodes.
 - Next task depends on: nothing from this one beyond the new `CommandPermissions` class.
+
+### Task 2 — refactor/single-responsibility
+
+- `common/database/{sqlite,mysql,postgresql}`: the pool, async wrapping and every query moved
+  into `common/database/sql/AbstractSqlEconomyDatabase`; each dialect keeps only its schema,
+  its differing statements, and how it binds UUIDs, booleans and timestamps. Statement text
+  and schemas are unchanged. MongoDB and the central backend share no SQL and stay as they
+  were. A SQLite round-trip test (`MCEconomySQLiteTest`) now covers the shared queries.
+- `common/MCEconomyProvider`: now a facade over `currency/CurrencyRegistry` (cache, managed
+  currencies, display order), `currency/CurrencyListParser`, `currency/DefaultCurrencies`, and
+  `balance/BalanceLedger` (logged balance changes, with set-then-log written once). Every
+  public method and `DEFAULT_CURRENCIES` stay; `getCurrenciesInDisplayOrder()` was added and
+  `BalanceCommand.orderedCurrencies` delegates to it.
+- `bukkit/AbstractMCEconomyPlugin`: backend selection moved to
+  `database/EconomyDatabaseFactory`, the MCIdentity-or-player decision to
+  `host/AccountBinding`, and command wiring to `commands/CommandRegistrar`. Public getters
+  are unchanged.
+- Docs: `common/README.md`, `bukkit/README.md`, `wiki/system.md`, `wiki/api.md`, `INDEX.md`.
+- `./gradlew build` green, tests included.
