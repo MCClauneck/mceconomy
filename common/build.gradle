@@ -16,6 +16,9 @@ dependencies {
     compileOnly 'com.google.code.gson:gson:2.14.0'
 
     testImplementation project(':api')
+    // The SQLite round-trip test runs the real driver and pool the plugin.yml libraries ship.
+    testImplementation 'com.zaxxer:HikariCP:7.0.2'
+    testRuntimeOnly 'org.xerial:sqlite-jdbc:3.53.0.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

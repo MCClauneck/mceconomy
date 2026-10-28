@@ -12,9 +12,10 @@ strictly responsible for **getting and setting data from the database**.
 | Component | Description |
 | --- | --- |
 | `MCEconomyProvider` | Central provider; caches currencies and orchestrates balance operations. |
-| `database/sqlite` | SQLite implementation of `IEconomyDatabase`. |
-| `database/mysql` | MySQL implementation. |
-| `database/postgresql` | PostgreSQL implementation. |
+| `database/sql/AbstractSqlEconomyDatabase` | The JDBC plumbing the three SQL backends share: the Hikari pool, the async wrapping, and every query; each dialect supplies only its schema, its differing statements, and how it binds UUIDs, booleans, and timestamps. |
+| `database/sqlite` | SQLite dialect of the shared SQL backend. |
+| `database/mysql` | MySQL dialect. |
+| `database/postgresql` | PostgreSQL dialect. |
 | `database/mongodb` | MongoDB implementation. |
 | `central` | Remote central server backend (MCEngine server-expressjs) over HTTP. |
 | `http/MCEconomyHttpClient` | Lightweight HTTP client used by the central backend. |
