@@ -160,6 +160,23 @@ class MCEconomyProviderCurrencyTest {
     }
 
     @Test
+    void testCurrenciesInDisplayOrder() {
+        StubDatabase database = new StubDatabase();
+        database.currencies.put("zinc", new Currency(1, "zinc", "Zinc", true, Instant.now(), Instant.now()));
+        database.currencies.put("gold", new Currency(2, "gold", "Gold", true, Instant.now(), Instant.now()));
+        database.currencies.put("amber", new Currency(3, "amber", "Amber", true, Instant.now(), Instant.now()));
+        database.currencies.put("coin", new Currency(4, "coin", "Coin", true, Instant.now(), Instant.now()));
+
+        MCEconomyProvider provider = new MCEconomyProvider(database,
+                MCEconomyProvider.parseCurrencyList(Arrays.asList("gold,Gold", "coin,Coin")));
+        provider.loadCurrencies().join();
+
+        assertEquals(Arrays.asList("gold", "coin", "amber", "zinc"),
+                provider.getCurrenciesInDisplayOrder().stream().map(Currency::systemCode).toList(),
+                "configured currencies first in configuration order, then the rest by code");
+    }
+
+    @Test
     @DisplayName("transferBalance rejects non-transferable currencies without touching balances")
     void testTransferGuard() {
         StubDatabase database = new StubDatabase();

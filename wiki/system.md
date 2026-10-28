@@ -50,7 +50,9 @@ the plugin provides the classes at runtime, so nothing is shaded.
 ## Accounts, wallets, and logging
 
 The `MCEconomyProvider` is the central entry point for balance operations: adding, removing,
-and setting balances, and transferring between accounts. Amounts are validated (no negatives,
+and setting balances, and transferring between accounts. It is a facade: the currency cache and
+the configured currencies live in `common/currency/CurrencyRegistry`, and every logged balance
+change in `common/balance/BalanceLedger`. Amounts are validated (no negatives,
 no overdrafts) and every change writes log rows. A transfer debits the sender with a `SEND`
 entry and credits the receiver with a `RECEIVE` entry, plus a transaction receipt, and is
 rejected when the currency is not transferable. Currencies are configured per platform

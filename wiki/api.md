@@ -246,6 +246,13 @@ economy().transferBalance(
 </details>
 
 <details>
+<summary><code>getCurrenciesInDisplayOrder()</code></summary>
+
+- **Description**: Returns the cached currencies in the order `/balance` shows them: the configured currencies first, in configuration order, then any other database currency by system code.
+- **Return Type**: `List<Currency>`
+</details>
+
+<details>
 <summary><code>getManagedCurrencies()</code></summary>
 
 - **Description**: Returns the configured currencies as an unmodifiable, ordered system-code → `CurrencyDefinition` map (display name plus transferability).

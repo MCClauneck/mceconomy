@@ -3,7 +3,6 @@ package io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents;
 import io.github.mcclauneck.mceconomy.api.host.AccountSource;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.bukkit.AbstractMCEconomyPlugin;
-import io.github.mcclauneck.mceconomy.bukkit.commands.BalanceCommand;
 import io.github.mcclauneck.mceconomy.common.MCEconomyProvider;
 import io.github.mcclauneck.mceconomy.tools.EconomyToolPort;
 
@@ -64,7 +63,7 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     @Override
     public List<Currency> currencies() {
         MCEconomyProvider provider = this.plugin.getProvider();
-        return provider == null ? List.of() : BalanceCommand.orderedCurrencies(provider);
+        return provider == null ? List.of() : provider.getCurrenciesInDisplayOrder();
     }
 
     @Override
