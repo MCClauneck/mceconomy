@@ -12,9 +12,27 @@ commands:
   balance:
     description: Open your balance GUI (your active identity with MCIdentity).
     usage: /balance
+    permission: mcclauneck.mceconomy.command.balance
   pay:
     description: Pay another player (their active identity with MCIdentity).
     usage: /pay <player> <currency> <amount>
+    permission: mcclauneck.mceconomy.command.pay
+
+permissions:
+  mcclauneck.mceconomy.*:
+    description: Grants every MCEconomy command.
+    default: op
+    children:
+      mcclauneck.mceconomy.command.balance: true
+      mcclauneck.mceconomy.command.pay: true
+
+  mcclauneck.mceconomy.command.balance:
+    description: Open your own balance GUI with /balance.
+    default: true
+
+  mcclauneck.mceconomy.command.pay:
+    description: Pay another player from your own account with /pay.
+    default: true
 
 libraries:
   - org.xerial:sqlite-jdbc:3.53.0.0

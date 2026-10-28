@@ -106,14 +106,24 @@ Bukkit events (including how to cancel giving money to a player).
 
 ## Commands
 
-Both commands are available to every player — no permission is required — and both operate on
-the player's account: the **active MCIdentity identity** when MCIdentity is installed, the
-player otherwise:
+Both commands are available to every player by default, and both operate on the player's own
+account: the **active MCIdentity identity** when MCIdentity is installed, the player otherwise:
 
-| Command | Description |
-| --- | --- |
-| `/balance` | Opens a paged GUI showing the account's balance for every currency, one custom head per currency (texture configurable per currency). The window sizes itself to the currencies on the page, growing one row for every nine currencies and padding leftover slots with a black glass pane. |
-| `/pay <player> <currency> <amount>` | Pays another player's account. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
+| Command | Permission | Description |
+| --- | --- | --- |
+| `/balance` | `mcclauneck.mceconomy.command.balance` | Opens a paged GUI showing the account's balance for every currency, one custom head per currency (texture configurable per currency). The window sizes itself to the currencies on the page, growing one row for every nine currencies and padding leftover slots with a black glass pane. |
+| `/pay <player> <currency> <amount>` | `mcclauneck.mceconomy.command.pay` | Pays another player's account. The transfer is atomic and fully logged (`send` and `receive` log rows plus a transaction receipt), and non-transferable currencies are rejected. |
+
+### Permissions
+
+Every node is declared in each platform's `plugin.yml`. MCEconomy has no administrative
+command: neither command can touch another player's balance beyond the sender's own payment.
+
+| Node | Default | Grants |
+| --- | --- | --- |
+| `mcclauneck.mceconomy.command.balance` | `true` | `/balance` — the sender's own balances. Revoke it to hide the GUI from a group. |
+| `mcclauneck.mceconomy.command.pay` | `true` | `/pay` and its tab completion — paying from the sender's own account. Revoke it to stop a group from sending money. |
+| `mcclauneck.mceconomy.*` | `op` | Every node above. |
 
 ## Configuration
 
