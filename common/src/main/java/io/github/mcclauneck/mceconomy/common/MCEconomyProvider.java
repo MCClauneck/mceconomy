@@ -5,21 +5,24 @@ import io.github.mcclauneck.mceconomy.api.models.Account;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
 import io.github.mcclauneck.mceconomy.api.models.LogScope;
-import io.github.mcclauneck.mceconomy.api.models.Wallet;
+import io.github.mcclauneck.mceconomy.common.balance.BalanceLedger;
+import io.github.mcclauneck.mceconomy.common.currency.CurrencyListParser;
+import io.github.mcclauneck.mceconomy.common.currency.CurrencyRegistry;
+import io.github.mcclauneck.mceconomy.common.currency.DefaultCurrencies;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The central provider orchestrating all economy operations.
- * It abstracts database interactions and provides high-level transaction logic.
+ * <p>
+ * It is the one entry point other plugins call, and a facade over the parts
+ * that do the work: the {@link CurrencyRegistry} (the currency cache and the
+ * configured currencies), the {@link BalanceLedger} (logged balance changes),
+ * and the {@link IEconomyDatabase} for accounts and raw log rows.
  */
 public class MCEconomyProvider {
 
@@ -30,29 +33,11 @@ public class MCEconomyProvider {
      * in a predictable order. Server owners are expected to manage the real list
      * through {@code config.yml}; this constant exists purely as a safety net.
      */
-    public static final Map<String, CurrencyDefinition> DEFAULT_CURRENCIES;
-
-    static {
-        Map<String, CurrencyDefinition> defaults = new LinkedHashMap<>();
-        defaults.put("coin", new CurrencyDefinition("coin", "Coin", true));
-        defaults.put("copper", new CurrencyDefinition("copper", "Copper", true));
-        defaults.put("silver", new CurrencyDefinition("silver", "Silver", true));
-        defaults.put("gold", new CurrencyDefinition("gold", "Gold", false));
-        defaults.put("point", new CurrencyDefinition("point", "Point", false));
-        defaults.put("token", new CurrencyDefinition("token", "Token", false));
-        DEFAULT_CURRENCIES = Collections.unmodifiableMap(defaults);
-    }
+    public static final Map<String, CurrencyDefinition> DEFAULT_CURRENCIES = DefaultCurrencies.DEFINITIONS;
 
     private final IEconomyDatabase database;
-    private final Map<String, Currency> currencyCache = new ConcurrentHashMap<>();
-
-    /**
-     * The currencies this provider keeps present in the economy, keyed by their
-     * unique system codes. These are sourced from the configuration so server
-     * owners can add, remove, rename, or (un)lock currencies without code
-     * changes. Insertion order is preserved.
-     */
-    private final Map<String, CurrencyDefinition> managedCurrencies;
+    private final CurrencyRegistry currencies;
+    private final BalanceLedger ledger;
 
     /**
      * Constructs the MCEconomyProvider using the built-in fallback currencies.
@@ -75,51 +60,21 @@ public class MCEconomyProvider {
      */
     public MCEconomyProvider(IEconomyDatabase database, Map<String, CurrencyDefinition> managedCurrencies) {
         this.database = database;
-        if (managedCurrencies == null || managedCurrencies.isEmpty()) {
-            this.managedCurrencies = DEFAULT_CURRENCIES;
-        } else {
-            this.managedCurrencies = Collections.unmodifiableMap(new LinkedHashMap<>(managedCurrencies));
-        }
+        this.currencies = new CurrencyRegistry(database, managedCurrencies);
+        this.ledger = new BalanceLedger(database);
     }
 
     /**
      * Parses a raw list of {@code "code,Display Name,transferable"} entries (as
      * written in {@code config.yml}) into an ordered map of system codes to
-     * currency definitions.
-     * <p>
-     * Each entry is split on commas: the first part is the system code
-     * (lower-cased), the second the display name, and the optional third whether
-     * the currency is transferable ({@code true} unless it equals
-     * {@code "false"}, case-insensitively). When an entry has no display name
-     * the code is reused as the display name. Blank entries and entries without
-     * a usable code are skipped, and later duplicates of a code overwrite
-     * earlier ones. Insertion order is preserved.
+     * currency definitions. See {@link CurrencyListParser#parse(List)} for the
+     * rules.
      *
      * @param entries The raw configuration entries; may be {@code null}.
      * @return An ordered map of system code to definition (never {@code null}).
      */
     public static Map<String, CurrencyDefinition> parseCurrencyList(List<String> entries) {
-        Map<String, CurrencyDefinition> parsed = new LinkedHashMap<>();
-        if (entries == null) {
-            return parsed;
-        }
-        for (String entry : entries) {
-            if (entry == null) {
-                continue;
-            }
-            String[] parts = entry.split(",", 3);
-            String code = parts[0].trim().toLowerCase();
-            if (code.isEmpty()) {
-                continue;
-            }
-            String display = parts.length > 1 ? parts[1].trim() : "";
-            if (display.isEmpty()) {
-                display = code;
-            }
-            boolean transferable = parts.length <= 2 || !"false".equalsIgnoreCase(parts[2].trim());
-            parsed.put(code, new CurrencyDefinition(code, display, transferable));
-        }
-        return parsed;
+        return CurrencyListParser.parse(entries);
     }
 
     /**
@@ -135,12 +90,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture.
      */
     public CompletableFuture<Void> loadCurrencies() {
-        return this.database.getAllCurrencies().thenAccept(currencies -> {
-            currencyCache.clear();
-            for (Currency c : currencies) {
-                currencyCache.put(c.systemCode().toLowerCase(), c);
-            }
-        });
+        return this.currencies.load();
     }
 
     /**
@@ -149,7 +99,7 @@ public class MCEconomyProvider {
      * @return The Currency object or null if not found.
      */
     public Currency getCurrency(String systemCode) {
-        return currencyCache.get(systemCode.toLowerCase());
+        return this.currencies.get(systemCode);
     }
 
     /**
@@ -157,7 +107,18 @@ public class MCEconomyProvider {
      * @return A list of all loaded currencies.
      */
     public List<Currency> getCurrencies() {
-        return new ArrayList<>(currencyCache.values());
+        return this.currencies.all();
+    }
+
+    /**
+     * Returns the cached currencies in a stable display order: the configured
+     * (managed) currencies first, in configuration order, then any remaining
+     * database currencies sorted by system code.
+     *
+     * @return The currencies in display order.
+     */
+    public List<Currency> getCurrenciesInDisplayOrder() {
+        return this.currencies.displayOrder();
     }
 
     /**
@@ -169,7 +130,7 @@ public class MCEconomyProvider {
      * @return An unmodifiable, ordered map of system code to definition.
      */
     public Map<String, CurrencyDefinition> getManagedCurrencies() {
-        return this.managedCurrencies;
+        return this.currencies.managed();
     }
 
     /**
@@ -189,24 +150,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture that completes once all managed currencies exist.
      */
     public CompletableFuture<Void> ensureDefaultCurrencies() {
-        List<CompletableFuture<Currency>> writes = new ArrayList<>();
-        for (CurrencyDefinition definition : this.managedCurrencies.values()) {
-            Currency existing = getCurrency(definition.systemCode());
-            boolean upToDate = existing != null
-                    && existing.displayName().equals(definition.displayName())
-                    && existing.transferable() == definition.transferable();
-            if (!upToDate) {
-                writes.add(this.database.createCurrency(
-                        definition.systemCode(), definition.displayName(), definition.transferable()));
-            }
-        }
-
-        if (writes.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        return CompletableFuture.allOf(writes.toArray(new CompletableFuture[0]))
-                .thenCompose(ignored -> loadCurrencies());
+        return this.currencies.ensureManaged();
     }
 
     /**
@@ -238,9 +182,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture containing the current balance.
      */
     public CompletableFuture<Long> getBalance(String accountType, UUID accountUuid, Currency currency) {
-        if (currency == null) return CompletableFuture.completedFuture(0L);
-        return this.database.getWallet(accountType, accountUuid, currency.id())
-                .thenApply(Wallet::amount);
+        return this.ledger.balance(accountType, accountUuid, currency);
     }
 
     /**
@@ -269,16 +211,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture containing the new balance.
      */
     public CompletableFuture<Long> setBalance(String accountType, UUID accountUuid, Currency currency, long newBalance, LogScope scope, UUID transactionUuid, String referenceType, String referenceId) {
-        if (newBalance < 0) throw new IllegalArgumentException("Balance cannot be negative");
-
-        return this.database.getWallet(accountType, accountUuid, currency.id()).thenCompose(wallet -> {
-            long difference = newBalance - wallet.amount();
-            if (difference == 0) return CompletableFuture.completedFuture(wallet.amount());
-
-            return this.database.setWalletBalance(accountType, accountUuid, currency.id(), newBalance)
-                    .thenCompose(updatedWallet -> this.database.insertLog(accountType, accountUuid, scope, currency.id(), difference, transactionUuid, referenceType, referenceId)
-                            .thenApply(v -> updatedWallet.amount()));
-        });
+        return this.ledger.set(accountType, accountUuid, currency, newBalance, scope, transactionUuid, referenceType, referenceId);
     }
 
     /**
@@ -294,14 +227,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture containing the new balance.
      */
     public CompletableFuture<Long> addBalance(String accountType, UUID accountUuid, Currency currency, long amount, LogScope scope, UUID transactionUuid, String referenceType, String referenceId) {
-        if (amount < 0) throw new IllegalArgumentException("Amount cannot be negative");
-        
-        return this.database.getWallet(accountType, accountUuid, currency.id()).thenCompose(wallet -> {
-            long newBalance = wallet.amount() + amount;
-            return this.database.setWalletBalance(accountType, accountUuid, currency.id(), newBalance)
-                    .thenCompose(updatedWallet -> this.database.insertLog(accountType, accountUuid, scope, currency.id(), amount, transactionUuid, referenceType, referenceId)
-                            .thenApply(v -> updatedWallet.amount()));
-        });
+        return this.ledger.add(accountType, accountUuid, currency, amount, scope, transactionUuid, referenceType, referenceId);
     }
 
     /**
@@ -317,17 +243,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture containing the new balance, or exceptionally completes if insufficient funds.
      */
     public CompletableFuture<Long> removeBalance(String accountType, UUID accountUuid, Currency currency, long amount, LogScope scope, UUID transactionUuid, String referenceType, String referenceId) {
-        if (amount < 0) throw new IllegalArgumentException("Amount cannot be negative");
-
-        return this.database.getWallet(accountType, accountUuid, currency.id()).thenCompose(wallet -> {
-            if (wallet.amount() < amount) {
-                return CompletableFuture.failedFuture(new IllegalStateException("Insufficient funds"));
-            }
-            long newBalance = wallet.amount() - amount;
-            return this.database.setWalletBalance(accountType, accountUuid, currency.id(), newBalance)
-                    .thenCompose(updatedWallet -> this.database.insertLog(accountType, accountUuid, scope, currency.id(), -amount, transactionUuid, referenceType, referenceId)
-                            .thenApply(v -> updatedWallet.amount()));
-        });
+        return this.ledger.remove(accountType, accountUuid, currency, amount, scope, transactionUuid, referenceType, referenceId);
     }
 
     /**
@@ -349,15 +265,7 @@ public class MCEconomyProvider {
      * @return A CompletableFuture returning true if successful, exceptionally completes otherwise.
      */
     public CompletableFuture<Boolean> transferBalance(String fromAccountType, UUID fromAccountUuid, String toAccountType, UUID toAccountUuid, Currency currency, long amount, UUID transactionUuid, String referenceType, String referenceId) {
-        if (amount <= 0) throw new IllegalArgumentException("Transfer amount must be positive");
-        if (!currency.transferable()) {
-            return CompletableFuture.failedFuture(
-                    new IllegalStateException("Currency " + currency.systemCode() + " is not transferable"));
-        }
-
-        return removeBalance(fromAccountType, fromAccountUuid, currency, amount, LogScope.SEND, transactionUuid, referenceType, referenceId)
-                .thenCompose(newSenderBalance -> addBalance(toAccountType, toAccountUuid, currency, amount, LogScope.RECEIVE, transactionUuid, referenceType, referenceId)
-                        .thenApply(newReceiverBalance -> true));
+        return this.ledger.transfer(fromAccountType, fromAccountUuid, toAccountType, toAccountUuid, currency, amount, transactionUuid, referenceType, referenceId);
     }
 
     /**

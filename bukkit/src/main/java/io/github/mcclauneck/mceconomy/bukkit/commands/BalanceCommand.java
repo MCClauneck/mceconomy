@@ -13,7 +13,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -97,7 +96,7 @@ public class BalanceCommand implements CommandExecutor {
      * Reads every currency balance of the account and opens the GUI.
      */
     private void openFor(Player player, String accountType, UUID accountUuid) {
-        List<Currency> currencies = orderedCurrencies(this.provider);
+        List<Currency> currencies = this.provider.getCurrenciesInDisplayOrder();
         List<CompletableFuture<CurrencyBalanceEntry>> rows = new ArrayList<>(currencies.size());
         for (Currency currency : currencies) {
             rows.add(provider.getBalance(accountType, accountUuid, currency)
@@ -124,26 +123,13 @@ public class BalanceCommand implements CommandExecutor {
     /**
      * Returns the cached currencies in a stable display order: the configured
      * (managed) currencies first, in configuration order, then any remaining
-     * database currencies sorted by system code. Shared with the MCAgents tools
-     * so the AI reports balances in the order the GUI shows them.
+     * database currencies sorted by system code. Kept for callers that used it
+     * before {@link MCEconomyProvider#getCurrenciesInDisplayOrder()} existed.
      *
      * @param provider The economy provider whose cache is read.
      * @return The currencies in display order.
      */
     public static List<Currency> orderedCurrencies(MCEconomyProvider provider) {
-        Map<String, Currency> remaining = new LinkedHashMap<>();
-        provider.getCurrencies().stream()
-                .sorted((a, b) -> a.systemCode().compareToIgnoreCase(b.systemCode()))
-                .forEach(currency -> remaining.put(currency.systemCode().toLowerCase(), currency));
-
-        List<Currency> ordered = new ArrayList<>(remaining.size());
-        for (String code : provider.getManagedCurrencies().keySet()) {
-            Currency currency = remaining.remove(code.toLowerCase());
-            if (currency != null) {
-                ordered.add(currency);
-            }
-        }
-        ordered.addAll(remaining.values());
-        return ordered;
+        return provider.getCurrenciesInDisplayOrder();
     }
 }

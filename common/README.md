@@ -11,7 +11,10 @@ strictly responsible for **getting and setting data from the database**.
 
 | Component | Description |
 | --- | --- |
-| `MCEconomyProvider` | Central provider; caches currencies and orchestrates balance operations. |
+| `MCEconomyProvider` | Central provider and the one entry point other plugins call; a facade over the parts below. |
+| `currency/CurrencyRegistry` | The currency cache, the configured (managed) currencies, and their display order. |
+| `currency/CurrencyListParser`, `currency/DefaultCurrencies` | Parse the `code,Display Name,transferable` entries; the built-in fallback currencies. |
+| `balance/BalanceLedger` | Reads, sets, adds, removes, and transfers balances, writing a log row for every change. |
 | `database/sql/AbstractSqlEconomyDatabase` | The JDBC plumbing the three SQL backends share: the Hikari pool, the async wrapping, and every query; each dialect supplies only its schema, its differing statements, and how it binds UUIDs, booleans, and timestamps. |
 | `database/sqlite` | SQLite dialect of the shared SQL backend. |
 | `database/mysql` | MySQL dialect. |
