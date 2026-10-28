@@ -32,12 +32,13 @@ plugin extension for the Bukkit family of Minecraft servers, not a standalone ap
   owns keeps its own wallets and transaction logs. Equipping an identity ensures its account
   exists.
 - **Balance queries.** The `/balance` command opens a paged GUI, one custom head per currency,
-  with no permission required. The inventory sizes itself to the currencies on the page (one row
-  for every nine currencies) and pads leftover slots, and the navigation row when a second page
-  exists, with a black glass pane.
+  behind `mcclauneck.mceconomy.command.balance` (default `true`). The inventory sizes itself to
+  the currencies on the page (one row for every nine currencies) and pads leftover slots, and
+  the navigation row when a second page exists, with a black glass pane.
 - **Transfers.** The `/pay <player> <currency> <amount>` command pays another player's active
-  identity. The transfer is atomic and fully logged (`send` and `receive` rows plus a
-  transaction receipt). Non transferable currencies are rejected.
+  identity, behind `mcclauneck.mceconomy.command.pay` (default `true`). The transfer is atomic
+  and fully logged (`send` and `receive` rows plus a transaction receipt). Non transferable
+  currencies are rejected.
 - **Currency model.** Currencies are configured per platform `config.yml`, keyed by system code,
   each with a display name, a transferable flag, and an optional head texture. Gold, point, and
   token default to non transferable.

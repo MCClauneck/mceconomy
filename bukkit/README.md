@@ -15,6 +15,7 @@ the SpigotMC API only.
 | --- | --- |
 | `AbstractMCEconomyPlugin` | Shared plugin bootstrap (config, database wiring, provider, listener and command registration) extended by every platform entry point. |
 | `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's active identity. |
+| `commands/CommandPermissions` | The `mcclauneck.mceconomy.command.*` nodes the commands check. |
 | `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two active identities. |
 | `config/CurrencyConfig` | Parses the `currencies` config section: definitions (display name, transferable) and per-currency head textures. |
 | `config/AgentsSettings`, `config/MCAgentsGlobal` | Read the `agents` config block (`model`, `token`, both `global` by default) and resolve `global` from the running MCAgents plugin's `getAgentsModel()` / `getAgentsToken()` by reflection; exposed as `getAgentsModel()` / `getAgentsToken()` on `AbstractMCEconomyPlugin`. |

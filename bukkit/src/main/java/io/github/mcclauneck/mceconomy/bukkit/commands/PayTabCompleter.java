@@ -15,6 +15,7 @@ import java.util.Locale;
 /**
  * Tab completion for {@code /pay <player> <currency> <amount>}: online player
  * names, then transferable currency codes, then a few example amounts.
+ * Senders without {@link CommandPermissions#PAY} are offered nothing.
  */
 public class PayTabCompleter implements TabCompleter {
 
@@ -30,6 +31,9 @@ public class PayTabCompleter implements TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!sender.hasPermission(CommandPermissions.PAY)) {
+            return List.of();
+        }
         if (args.length == 1) {
             String prefix = args[0].toLowerCase(Locale.ROOT);
             return Bukkit.getOnlinePlayers().stream()

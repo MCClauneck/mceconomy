@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 
 /**
  * {@code /balance} — opens the paged balance GUI for the sender's account: the
- * <em>active identity</em> with MCIdentity, the player without it. No
- * permission is required.
+ * <em>active identity</em> with MCIdentity, the player without it. Requires
+ * {@link CommandPermissions#BALANCE}, which every player has by default.
  * <p>
  * The command first resolves the account through the {@link AccountSource} and
  * then reads one wallet per cached currency asynchronously before opening the
@@ -66,6 +66,10 @@ public class BalanceCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission(CommandPermissions.BALANCE)) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "Only players can open the balance GUI.");
             return true;

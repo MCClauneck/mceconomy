@@ -32,6 +32,8 @@ import java.util.logging.Logger;
  * row keyed by a fresh transaction UUID. Non-transferable currencies are
  * rejected before any balance is touched, and the
  * {@link EconomyTransactionEvent} veto convention is honored for both sides.
+ * <p>
+ * Requires {@link CommandPermissions#PAY}, which every player has by default.
  */
 public class PayCommand implements CommandExecutor {
 
@@ -65,6 +67,10 @@ public class PayCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission(CommandPermissions.PAY)) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "Only players can pay another player.");
             return true;
