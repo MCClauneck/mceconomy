@@ -65,6 +65,8 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 | [`wiki/logs/1/2/0/CHANGELOG.md`](wiki/logs/1/2/0/CHANGELOG.md) | Changelog for 1.2.0 — MCAgents AI tools, the Minecraft 26.3 server APIs, and Publish gated on a merged `release/{version}` pull request. |
 | [`wiki/logs/1/3/0/CHANGELOG.md`](wiki/logs/1/3/0/CHANGELOG.md) | Changelog for 1.3.0 — the `agents` block (`model`, `token`), defaulting to MCAgents' own model and key. |
 | [`wiki/logs/1/4/0/CHANGELOG.md`](wiki/logs/1/4/0/CHANGELOG.md) | Changelog for 1.4.0 — MCIdentity becomes a soft dependency; without it, wallets belong to players. |
+| [`wiki/logs/1/5/0/CHANGELOG.md`](wiki/logs/1/5/0/CHANGELOG.md) | Changelog for 1.5.0 — each of the nine `agents` modalities read on its own. |
+| [`wiki/logs/1/6/0/CHANGELOG.md`](wiki/logs/1/6/0/CHANGELOG.md) | Changelog for 1.6.0 — permission nodes for `/balance` and `/pay`, and the single-responsibility split. |
 | [`.agents/index/memory-index.md`](.agents/index/memory-index.md) | Agent memory: task records that let a later session continue earlier work. |
 
 ## Where to look

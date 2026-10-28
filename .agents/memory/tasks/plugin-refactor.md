@@ -5,7 +5,7 @@ description: Task record for the MCEconomy part of the organisation-wide plugin 
 
 # Task record — plugin refactor and command permissions
 
-**Status:** in progress
+**Status:** done
 **Requested by:** the owner, 2026-10-28, approved in advance (plan, pull requests, merge order, version 1.6.0).
 
 ## Goal
@@ -26,9 +26,9 @@ revoke `/balance` or `/pay` from a group.
 
 | # | Title | Branch | Files / areas | PR |
 |---|---|---|---|---|
-| 1 | Require permissions for the economy commands | `refactor/command-permissions` | four `plugin.yml`, `bukkit/commands/*`, README, `wiki/requirements.md`, `bukkit/README.md` | |
-| 2 | Split oversized classes into single-responsibility files | `refactor/single-responsibility` | `common/MCEconomyProvider`, `common/database/*`, `bukkit/AbstractMCEconomyPlugin`, docs naming them | |
-| 3 | Release 1.6.0 | `release/1.6.0` | `gradle.properties`, `wiki/logs/1/6/0/CHANGELOG.md`, `INDEX.md`, this record | |
+| 1 | Require permissions for the economy commands | `refactor/command-permissions` | four `plugin.yml`, `bukkit/commands/*`, README, `wiki/requirements.md`, `bukkit/README.md` | #34 |
+| 2 | Split oversized classes into single-responsibility files | `refactor/single-responsibility` | `common/MCEconomyProvider`, `common/database/*`, `bukkit/AbstractMCEconomyPlugin`, docs naming them | #35 |
+| 3 | Release 1.6.0 | `release/1.6.0` | `gradle.properties`, `wiki/logs/1/6/0/CHANGELOG.md`, `INDEX.md`, this record | #36 |
 
 ## Entries
 
@@ -65,3 +65,11 @@ revoke `/balance` or `/pay` from a group.
   are unchanged.
 - Docs: `common/README.md`, `bukkit/README.md`, `wiki/system.md`, `wiki/api.md`, `INDEX.md`.
 - `./gradlew build` green, tests included.
+
+### Task 3 — release/1.6.0
+
+- `project-version` 1.5.0 → 1.6.0 (minor: new permission nodes and a new provider method),
+  approved in advance by the owner.
+- `wiki/logs/1/6/0/CHANGELOG.md` written; `INDEX.md` lists the 1.5.0 log (missing until now)
+  and the 1.6.0 log.
+- PR column filled; record closed.
