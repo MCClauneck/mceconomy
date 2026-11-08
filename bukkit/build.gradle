@@ -3,8 +3,9 @@ plugins {
     id 'maven-publish'
 }
 
-// Published POM description; the rest of the publishing setup is shared from the
-// root build.
+// Published POM description. The GitHub Packages repository, the
+// mceconomy-{module} artifactId and the rest of the POM come from the
+// io.github.mcengine.build-logic convention plugin applied by the root build.
 description = "MCClauneck Plugin Bukkit"
 
 repositories {
@@ -45,4 +46,17 @@ test {
 
 base {
     archivesName = "MCEconomyBukkit"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = "${rootProject.name}-${project.name}"
+                description = project.description
+            }
+        }
+    }
 }
