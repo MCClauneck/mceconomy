@@ -5,7 +5,7 @@ description: Task record for moving mceconomy's root build.gradle onto the share
 
 # Gradle plugin adoption
 
-**Status:** in progress
+**Status:** done
 
 ## Goal
 
@@ -35,9 +35,9 @@ The owner was away and asked for the recommended option at every fork.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Plan and task record | `plan/gradle-plugin-adoption` | |
-| 2 | Apply the convention plugin | `build/gradle-plugin` | |
-| 3 | Release 1.7.0 | `release/1.7.0` | |
+| 1 | Plan and task record | `plan/gradle-plugin-adoption` | #37 |
+| 2 | Apply the convention plugin | `build/gradle-plugin` | #38 |
+| 3 | Release 1.7.0 | `release/1.7.0` | #39 |
 
 ## Progress
 
@@ -51,3 +51,8 @@ Wrote this record.
 `build.gradle` is now the plugin plus `mcengineBuild { }`; module builds dropped the
 Shadow version. api, common and bukkit now declare their own `mavenJava` publication (the root used to); artifactIds become `mceconomy-*`; dropped the root `shadow apply false`; updated `wiki/api.md` and `wiki/environment.md`. Verified locally with `./gradlew build` against the plugin
 published to Maven Local.
+
+### Task 3 — release/1.7.0
+
+`project-version` → 1.7.0, `wiki/logs/1/7/0/CHANGELOG.md`, the log index row
+where the repository keeps one, and the PR column. Record closed.
