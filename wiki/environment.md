@@ -11,7 +11,8 @@ GitHub Packages authentication is required to resolve the MCIdentity `compileOnl
 (building the `bukkit` module) and to publish the `api`, `common`, and `bukkit` libraries. The
 token needs the `read:packages` scope to build and `write:packages` to publish.
 
-The `bukkit` module and publishing from the root build both resolve the credentials from
+The `bukkit` module, the [`io.github.mcengine.build-logic`](https://github.com/MCEngine/gradle-plugin)
+convention plugin the root build applies, and publishing all resolve the credentials from
 `GITHUB_ACTOR` and `GITHUB_TOKEN`:
 
 ```bash
