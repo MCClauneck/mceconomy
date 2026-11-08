@@ -59,29 +59,31 @@ repositories {
 }
 ```
 
-### 1.2 Declare the three dependencies (`compileOnly`, version `1.0.0`)
+### 1.2 Declare the three dependencies (`compileOnly`, version `1.7.0`)
 
 MCEconomy is present on the server at runtime, so you compile against it but do
 **not** bundle/shade it — use the `compileOnly` configuration for all three
 artifacts. The published coordinates are group `io.github.mcclauneck`, version
-`1.0.0`:
+`1.7.0`:
 
 ```groovy
 // build.gradle
 dependencies {
     // MCEconomy — provided by the server at runtime, so compileOnly only.
-    compileOnly 'io.github.mcclauneck:api:1.0.0'      // interfaces & models
-    compileOnly 'io.github.mcclauneck:common:1.0.0'   // MCEconomyProvider + data layer
-    compileOnly 'io.github.mcclauneck:bukkit:1.0.0'   // Bukkit events & helpers
+    compileOnly 'io.github.mcclauneck:mceconomy-api:1.7.0'      // interfaces & models
+    compileOnly 'io.github.mcclauneck:mceconomy-common:1.7.0'   // MCEconomyProvider + data layer
+    compileOnly 'io.github.mcclauneck:mceconomy-bukkit:1.7.0'   // Bukkit events & helpers
 
     // Your own server platform API (example)
     compileOnly 'org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT'
 }
 ```
 
-> The jar file names are `MCEconomyApi-1.0.0.jar`, `MCEconomyCommon-1.0.0.jar`,
-> and `MCEconomyBukkit-1.0.0.jar` (set via `archivesName`), but the resolvable
-> **Maven artifactIds** are `api`, `common`, and `bukkit` as shown above.
+> The jar file names are `MCEconomyApi-1.7.0.jar`, `MCEconomyCommon-1.7.0.jar`,
+> and `MCEconomyBukkit-1.7.0.jar` (set via `archivesName`), but the resolvable
+> **Maven artifactIds** are `mceconomy-api`, `mceconomy-common`, and
+> `mceconomy-bukkit` as shown above. Releases before 1.7.0 published them under
+> the bare `api`, `common`, and `bukkit`.
 
 ### 1.3 Load order
 
