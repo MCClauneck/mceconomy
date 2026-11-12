@@ -5,9 +5,9 @@ description: Task record for giving every MCEconomy AI tool a permission node th
 
 # Tool permissions
 
-**Status:** in progress
+**Status:** done
 
-*Opened on project version 1.7.0.*
+*Opened on project version 1.7.0; closed on 1.8.0.*
 
 ## Goal
 
@@ -42,9 +42,9 @@ again when a tool runs; this plugin names the node of each of its tools.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/tool-permissions` | |
-| 2 | Name a permission node for every tool | `feat/tool-permissions` | |
-| 3 | Release 1.8.0 | `release/1.8.0` | |
+| 1 | Record the plan | `plan/tool-permissions` | #40 |
+| 2 | Name a permission node for every tool | `feat/tool-permissions` | #41 |
+| 3 | Release 1.8.0 | `release/1.8.0` | #42 |
 
 ## Progress
 
@@ -59,3 +59,7 @@ Record opened. Nothing built yet.
 * No tool had a node of its own; every tool uses the default node.
 * All four `plugin.yml` declare the nodes in the table above.
 * `wiki/agent-tools.md` documents the nodes.
+
+### Task 3 — release/1.8.0
+
+`project-version` 1.8.0, `wiki/logs/1/8/0/CHANGELOG.md`, record closed.
