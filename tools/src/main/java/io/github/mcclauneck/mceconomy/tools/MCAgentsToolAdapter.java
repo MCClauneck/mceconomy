@@ -101,6 +101,9 @@ public final class MCAgentsToolAdapter {
                 case "getParametersJsonSchema":
                     if (arity == 0) return this.tool.getParametersJsonSchema();
                     break;
+                case "getPermission":
+                    if (arity == 0) return this.tool.getPermission();
+                    break;
                 case "getCategories":
                     if (arity == 0) return this.tool.getCategories();
                     break;

@@ -41,3 +41,17 @@ classloader, and `bukkit/bridge/mcagents/MCAgentsToolRegistrar` registers those 
 the MCAgents provider. The tools read through `EconomyToolPort`, implemented in `bukkit` over the
 provider's asynchronous wallet reads and the account binding, so no tool touches a player
 entity and every database call stays asynchronous.
+
+## Permissions
+
+Every tool has a permission node. MCAgents 6.9.0 and later only offer a player the
+tools they are OP for or hold the node of, so nobody spends tokens on a tool they cannot
+use, and they check the node again when the tool runs. The server caller is never
+restricted. Older MCAgents versions ignore the nodes.
+
+| Tool | Node | Default |
+|---|---|---|
+| `economy_list_currencies` | `mcclauneck.mceconomy.tool.economy_list_currencies` | `true` |
+| `economy_get_my_balances` | `mcclauneck.mceconomy.tool.economy_get_my_balances` | `true` |
+
+`mcclauneck.mceconomy.tool.*` grants every tool with a `true` default; deny one node to hide that tool from a player.
