@@ -19,10 +19,23 @@ commands:
     permission: mcclauneck.mceconomy.command.pay
 
 permissions:
+  mcclauneck.mceconomy.tool.*:
+    description: Every MCEconomy AI tool every player may use. MCAgents only offers a player the tools they are OP for or hold the node of.
+    default: true
+    children:
+      mcclauneck.mceconomy.tool.economy_list_currencies: true
+      mcclauneck.mceconomy.tool.economy_get_my_balances: true
+  mcclauneck.mceconomy.tool.economy_list_currencies:
+    description: Let the AI list the currencies.
+    default: true
+  mcclauneck.mceconomy.tool.economy_get_my_balances:
+    description: Let the AI read your balances.
+    default: true
   mcclauneck.mceconomy.*:
     description: Grants every MCEconomy command.
     default: op
     children:
+      mcclauneck.mceconomy.tool.*: true
       mcclauneck.mceconomy.command.balance: true
       mcclauneck.mceconomy.command.pay: true
 
