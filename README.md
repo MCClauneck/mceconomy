@@ -138,8 +138,10 @@ currencies:
     texture: <base64>        # head texture shown in the /balance GUI (optional)
 ```
 
-The legacy list format (`- coin,Coin,true`) is still accepted. Gold, point, and token default
-to non-transferable.
+The legacy list format (`- coin,Coin,true`) is still accepted. The default config ships the four
+base coins (`coin`, `copper`, `silver`, `gold`), the top-up currency `credit`, and two example
+custom currencies (`point`, `token`). What each is for, why 100 coin is not 1 copper, and what
+to think about before adding a currency of your own are in [`wiki/currencies.md`](wiki/currencies.md).
 
 ### AI agent model and key
 
@@ -209,6 +211,7 @@ Detailed documentation lives in the [`wiki/`](wiki/) directory:
 - [`wiki/api.md`](wiki/api.md) — developer API guide for third party plugins.
 - [`wiki/environment.md`](wiki/environment.md) — build and publish environment variables and infrastructure examples.
 - [`wiki/system.md`](wiki/system.md) — system architecture and runtime behavior.
+- [`wiki/currencies.md`](wiki/currencies.md) — the base coins, credit, and what to plan before adding a currency.
 
 ## License
 

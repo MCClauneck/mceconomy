@@ -62,6 +62,7 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 | [`wiki/environment.md`](wiki/environment.md) | Build and publish environment variables and infrastructure examples. |
 | [`wiki/system.md`](wiki/system.md) | System architecture and runtime behavior. |
 | [`wiki/agent-tools.md`](wiki/agent-tools.md) | The optional MCAgents AI tools: names, what they return, and who can use them. |
+| [`wiki/currencies.md`](wiki/currencies.md) | The default currencies (four base coins and credit), the reserved codes, and the warning to read before adding a custom currency. |
 | [`wiki/logs/1/2/0/CHANGELOG.md`](wiki/logs/1/2/0/CHANGELOG.md) | Changelog for 1.2.0 — MCAgents AI tools, the Minecraft 26.3 server APIs, and Publish gated on a merged `release/{version}` pull request. |
 | [`wiki/logs/1/3/0/CHANGELOG.md`](wiki/logs/1/3/0/CHANGELOG.md) | Changelog for 1.3.0 — the `agents` block (`model`, `token`), defaulting to MCAgents' own model and key. |
 | [`wiki/logs/1/4/0/CHANGELOG.md`](wiki/logs/1/4/0/CHANGELOG.md) | Changelog for 1.4.0 — MCIdentity becomes a soft dependency; without it, wallets belong to players. |
@@ -74,6 +75,7 @@ declares `depend: [MCIdentity]`, which is what guarantees the host is loaded fir
 - Per-module details → each module's `README.md`.
 - Developer API integration → [`wiki/api.md`](wiki/api.md).
 - MCAgents AI tools → [`wiki/agent-tools.md`](wiki/agent-tools.md).
+- Currencies and the base coins → [`wiki/currencies.md`](wiki/currencies.md).
 - Release history → [`wiki/logs/`](wiki/logs/), one `{Major}/{Minor}/{Patch}/CHANGELOG.md` per version.
 - MCIdentity integration → [`bukkit/README.md`](bukkit/README.md) and the root
   [`README.md`](README.md).
