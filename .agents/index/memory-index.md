@@ -6,7 +6,7 @@ description: Index of agent memory — the task records a session loads to conti
 # Memory Index
 
 **Scope:** `.agents/memory/`
-**Parent:** [`INDEX.md`](../../INDEX.md) (this repository has no `.agents/index/root-index.md` yet)
+**Parent:** [root-index](root-index.md)
 
 ## Tasks
 
