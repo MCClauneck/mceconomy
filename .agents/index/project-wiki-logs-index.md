@@ -12,6 +12,7 @@ description: Index of wiki/logs — one changelog per released version, newest f
 
 | File | Purpose |
 |---|---|
+| [`wiki/logs/2/1/0/CHANGELOG.md`](../../wiki/logs/2/1/0/CHANGELOG.md) | 2.1.0 — the shared `accounts` table replaces `economy_account`; MCMultiverse and MCRealm soft dependencies. |
 | [`wiki/logs/2/0/0/CHANGELOG.md`](../../wiki/logs/2/0/0/CHANGELOG.md) | 2.0.0 — every wallet belongs to the player; the MCIdentity integration is removed. |
 | [`wiki/logs/1/8/0/CHANGELOG.md`](../../wiki/logs/1/8/0/CHANGELOG.md) | 1.8.0 — a permission node for every AI tool. |
 | [`wiki/logs/1/7/0/CHANGELOG.md`](../../wiki/logs/1/7/0/CHANGELOG.md) | 1.7.0 — the build moves onto the shared MCEngine convention plugin. |
