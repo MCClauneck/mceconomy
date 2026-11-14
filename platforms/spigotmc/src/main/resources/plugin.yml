@@ -6,7 +6,7 @@ api-version: '1.20'
 author: MCClauneck
 description: A plugin for SpigotMC
 
-softdepend: [MCAgents]
+softdepend: [MCAgents, MCMultiverse, MCRealm]
 
 commands:
   balance:

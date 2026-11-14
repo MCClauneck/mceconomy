@@ -173,8 +173,11 @@ source of truth for every module.
   not already installed; otherwise install a JDK 25 locally.
 - **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer.
   The single universal jar detects the server automatically, so the same jar runs on all three.
-- **MCAgents (optional):** MCEconomy soft-depends on MCAgents (`softdepend: [MCAgents]`) to
-  offer its read-only AI tools. It needs no other plugin.
+- **MCAgents (optional):** MCEconomy soft-depends on MCAgents to offer its read-only AI tools.
+- **MCMultiverse and MCRealm (optional):** MCEconomy also soft-depends on both
+  (`softdepend: [MCAgents, MCMultiverse, MCRealm]`), so it loads after them when they are
+  installed and finds the shared `accounts` table they created. It calls no API of either and
+  creates the table itself when neither is installed. It needs no other plugin.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
 - **Credentials (GitHub Packages):** only **publishing** needs them — a token with the
