@@ -5,7 +5,7 @@ description: Task record for keying every wallet by the player UUID now that MCI
 
 # Profession wearing
 
-**Status:** in progress
+**Status:** done
 
 *Opened on project version 1.8.0.*
 
@@ -38,9 +38,9 @@ every wallet belongs to the player, with or without MCIdentity installed.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/profession-wearing` | |
-| 2 | Key wallets by the player | `refactor/profession-wearing` | |
-| 3 | Release 2.0.0 | `release/2.0.0` | |
+| 1 | Record the plan | `plan/profession-wearing` | #45 |
+| 2 | Key wallets by the player | `refactor/profession-wearing` | #46 |
+| 3 | Release 2.0.0 | `release/2.0.0` | #47 |
 
 ### Task 1 — plan/profession-wearing
 
@@ -53,3 +53,7 @@ and registers `PlayerAccountListener`; `IdentitySource`, `MCIdentityBridge`,
 `IdentityAccountListener` and `AccountTypes.IDENTITY` are deleted, and MCIdentity left
 every `softdepend`. The tool port is `isAccountReady()` / `accountUuid(UUID)`. Reworded the
 README, module READMEs and wiki.
+
+### Task 3 — release/2.0.0
+
+Set `project-version` to 2.0.0 and added the 2.0.0 changelog and its logs index row.

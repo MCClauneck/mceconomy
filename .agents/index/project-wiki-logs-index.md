@@ -12,6 +12,7 @@ description: Index of wiki/logs — one changelog per released version, newest f
 
 | File | Purpose |
 |---|---|
+| [`wiki/logs/2/0/0/CHANGELOG.md`](../../wiki/logs/2/0/0/CHANGELOG.md) | 2.0.0 — every wallet belongs to the player; the MCIdentity integration is removed. |
 | [`wiki/logs/1/8/0/CHANGELOG.md`](../../wiki/logs/1/8/0/CHANGELOG.md) | 1.8.0 — a permission node for every AI tool. |
 | [`wiki/logs/1/7/0/CHANGELOG.md`](../../wiki/logs/1/7/0/CHANGELOG.md) | 1.7.0 — the build moves onto the shared MCEngine convention plugin. |
 | [`wiki/logs/1/6/0/CHANGELOG.md`](../../wiki/logs/1/6/0/CHANGELOG.md) | 1.6.0 — permission nodes for `/balance` and `/pay`, and the single-responsibility split. |
