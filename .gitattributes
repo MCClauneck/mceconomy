@@ -10,3 +10,6 @@
 # Binary files should be left untouched
 *.jar           binary
 
+
+# The shared accounts DDL is pinned by SHA-256; keep its bytes exact
+*.sql           text eol=lf
