@@ -5,7 +5,7 @@ description: Task record for replacing economy_account with the shared accounts 
 
 # Shared accounts
 
-**Status:** in progress
+**Status:** done
 
 *Opened on project version 2.0.0.*
 
@@ -42,10 +42,10 @@ MCMultiverse and MCRealm when they are installed.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Record the plan | `plan/shared-accounts` | |
-| 2 | Adopt the shared accounts table | `feat/shared-accounts` | |
-| 3 | Soft depend on MCMultiverse and MCRealm | `chore/softdepend-universe` | |
-| 4 | Release 2.1.0 | `release/2.1.0` | |
+| 1 | Record the plan | `plan/shared-accounts` | #48 |
+| 2 | Adopt the shared accounts table | `feat/shared-accounts` | #49 |
+| 3 | Soft depend on MCMultiverse and MCRealm | `chore/softdepend-universe` | #50 |
+| 4 | Release 2.1.0 | `release/2.1.0` | #51 |
 
 ### Task 1 — plan/shared-accounts
 
@@ -65,3 +65,7 @@ The system wiki gained a storage section.
 
 Every `plugin.yml` soft depends on `[MCAgents, MCMultiverse, MCRealm]`, and the README
 requirements name both new soft dependencies.
+
+### Task 4 — release/2.1.0
+
+Set `project-version` to 2.1.0 and added the 2.1.0 changelog and its logs index row.
