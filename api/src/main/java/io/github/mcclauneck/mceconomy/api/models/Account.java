@@ -4,7 +4,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Represents the economy_account table.
+ * Represents a row of the shared {@code accounts} table (the {@code accounts}
+ * collection on MongoDB) that every account-keyed economy row references.
  */
 public record Account(
     String accountType,

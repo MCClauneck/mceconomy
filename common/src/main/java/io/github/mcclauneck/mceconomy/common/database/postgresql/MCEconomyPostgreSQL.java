@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.mcclauneck.mceconomy.api.models.Currency;
 import io.github.mcclauneck.mceconomy.common.database.sql.AbstractSqlEconomyDatabase;
+import io.github.mcclauneck.mceconomy.common.database.sql.SharedAccounts;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,7 +16,8 @@ import java.util.UUID;
 /**
  * PostgreSQL implementation of the Economy Database: the PostgreSQL schema
  * (native {@code UUID} columns, the {@code economy_log_scope} enum, and the
- * archive tables), {@code ON CONFLICT} statements, and a currency upsert that
+ * archive tables, each account-keyed one referencing the shared
+ * {@code accounts} table), {@code ON CONFLICT} statements, and a currency upsert that
  * returns its row. The queries themselves are shared through
  * {@link AbstractSqlEconomyDatabase}.
  */
@@ -31,7 +33,7 @@ public class MCEconomyPostgreSQL extends AbstractSqlEconomyDatabase {
      * @param password The database user password.
      */
     public MCEconomyPostgreSQL(String host, int port, String database, String username, String password) {
-        super(createDataSource(host, port, database, username, password), "Failed to initialize PostgreSQL schema for Economy");
+        super(createDataSource(host, port, database, username, password), "Failed to initialize PostgreSQL schema for Economy", SharedAccounts.POSTGRESQL);
         initialize();
     }
 
@@ -52,26 +54,19 @@ public class MCEconomyPostgreSQL extends AbstractSqlEconomyDatabase {
         stmt.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'economy_log_scope') THEN CREATE TYPE economy_log_scope AS ENUM ('send', 'receive', 'spend', 'donate'); END IF; END$$;");
 
         // Main Tables
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_account (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
         stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id SERIAL PRIMARY KEY, system_code VARCHAR(50) NOT NULL UNIQUE, display_name VARCHAR(100) NOT NULL, is_transferable BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
         // Migrate databases created before the column existed.
         stmt.execute("ALTER TABLE economy_currency ADD COLUMN IF NOT EXISTS is_transferable BOOLEAN NOT NULL DEFAULT TRUE");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'completed', created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE)");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id BIGSERIAL PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'completed', created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE CASCADE)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id BIGSERIAL PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
 
         // Archive Tables
-        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_account (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
         stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_currency (id INT PRIMARY KEY, system_code VARCHAR(50) NOT NULL, display_name VARCHAR(100) NOT NULL, is_transferable BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
         stmt.execute("ALTER TABLE archive_economy_currency ADD COLUMN IF NOT EXISTS is_transferable BOOLEAN NOT NULL DEFAULT TRUE");
-        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id))");
-        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_logs (id BIGINT PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
-        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20), created_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)");
-    }
-
-    @Override
-    protected String insertAccountIfAbsentSql() {
-        return "INSERT INTO economy_account (account_type, account_uuid) VALUES (?, ?) ON CONFLICT (account_type, account_uuid) DO NOTHING";
+        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_wallet (account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, currency_id INT NOT NULL, amount BIGINT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE RESTRICT)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_logs (id BIGINT PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, scope economy_log_scope NOT NULL, currency_id INT NOT NULL, amount BIGINT NOT NULL, transaction_uuid UUID, reference_type VARCHAR(50), reference_id VARCHAR(100), created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE RESTRICT)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS archive_economy_transactions (transaction_uuid UUID PRIMARY KEY, account_type VARCHAR(50) NOT NULL, account_uuid UUID NOT NULL, status VARCHAR(20), created_at TIMESTAMPTZ, archived_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE RESTRICT)");
     }
 
     @Override

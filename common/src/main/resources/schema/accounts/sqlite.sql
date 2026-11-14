@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS accounts (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid));

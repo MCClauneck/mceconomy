@@ -37,26 +37,29 @@ public abstract class AbstractSqlEconomyDatabase implements IEconomyDatabase {
     /** The message the schema failure is reported with, naming the dialect. */
     private final String schemaFailureMessage;
 
+    /** The dialect of the shared {@code accounts} table every account row lives in. */
+    private final SharedAccounts accounts;
+
     /**
      * @param dataSource           The configured connection pool.
      * @param schemaFailureMessage The message {@link #initialize()} fails with.
+     * @param accounts             The dialect of the shared {@code accounts} table.
      */
-    protected AbstractSqlEconomyDatabase(HikariDataSource dataSource, String schemaFailureMessage) {
+    protected AbstractSqlEconomyDatabase(HikariDataSource dataSource, String schemaFailureMessage, SharedAccounts accounts) {
         this.dataSource = dataSource;
         this.schemaFailureMessage = schemaFailureMessage;
+        this.accounts = accounts;
     }
 
     /**
-     * Creates every table (and type) the dialect needs, if it is missing, and
-     * migrates older schemas.
+     * Creates every economy table (and type) the dialect needs, if it is
+     * missing, and migrates older schemas. The shared {@code accounts} table
+     * already exists when this runs.
      *
      * @param stmt A statement on an open connection.
      * @throws SQLException When a statement fails.
      */
     protected abstract void createSchema(Statement stmt) throws SQLException;
-
-    /** @return The insert that creates an account row unless it exists (two parameters: type, uuid). */
-    protected abstract String insertAccountIfAbsentSql();
 
     /** @return The insert that creates a wallet row at 0 unless it exists (type, uuid, currency id). */
     protected abstract String insertWalletIfAbsentSql();
@@ -124,6 +127,7 @@ public abstract class AbstractSqlEconomyDatabase implements IEconomyDatabase {
     public CompletableFuture<Void> initialize() {
         return CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+                stmt.execute(this.accounts.createTableSql());
                 createSchema(stmt);
             } catch (SQLException e) {
                 throw new RuntimeException(this.schemaFailureMessage, e);
@@ -139,21 +143,32 @@ public abstract class AbstractSqlEconomyDatabase implements IEconomyDatabase {
     @Override
     public CompletableFuture<Account> createAccount(String accountType, UUID accountUuid) {
         return CompletableFuture.supplyAsync(() -> {
-            try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(insertAccountIfAbsentSql())) {
-                ps.setString(1, accountType);
-                bindUuid(ps, 2, accountUuid);
-                ps.execute();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            ensureAccount(accountType, accountUuid);
             return getAccount(accountType, accountUuid).join().orElseThrow();
         });
+    }
+
+    /**
+     * Inserts the shared {@code accounts} row unless it exists, so every
+     * account-keyed write that follows satisfies its foreign key.
+     *
+     * @param accountType The account type.
+     * @param accountUuid The account UUID.
+     */
+    protected void ensureAccount(String accountType, UUID accountUuid) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(this.accounts.insertIfAbsentSql())) {
+            ps.setString(1, accountType);
+            bindUuid(ps, 2, accountUuid);
+            ps.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public CompletableFuture<Optional<Account>> getAccount(String accountType, UUID accountUuid) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT * FROM economy_account WHERE account_type = ? AND account_uuid = ?";
+            String sql = "SELECT * FROM accounts WHERE account_type = ? AND account_uuid = ?";
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, accountType);
                 bindUuid(ps, 2, accountUuid);
@@ -236,8 +251,7 @@ public abstract class AbstractSqlEconomyDatabase implements IEconomyDatabase {
     @Override
     public CompletableFuture<Wallet> getWallet(String accountType, UUID accountUuid, int currencyId) {
         return CompletableFuture.supplyAsync(() -> {
-            // Ensure the account exists
-            createAccount(accountType, accountUuid).join();
+            ensureAccount(accountType, accountUuid);
 
             try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(insertWalletIfAbsentSql())) {
                 ps.setString(1, accountType);
@@ -286,7 +300,8 @@ public abstract class AbstractSqlEconomyDatabase implements IEconomyDatabase {
     @Override
     public CompletableFuture<Void> insertLog(String accountType, UUID accountUuid, LogScope scope, int currencyId, long amount, UUID transactionUuid, String referenceType, String referenceId) {
         return CompletableFuture.runAsync(() -> {
-            // First ensure the transaction receipt exists, if one is given
+            ensureAccount(accountType, accountUuid);
+            // Then ensure the transaction receipt exists, if one is given
             if (transactionUuid != null) {
                 try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(insertTransactionIfAbsentSql())) {
                     bindUuid(ps, 1, transactionUuid);

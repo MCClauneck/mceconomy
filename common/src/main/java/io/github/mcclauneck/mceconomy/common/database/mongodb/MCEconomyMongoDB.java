@@ -21,8 +21,17 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * MongoDB implementation of the Economy Database.
+ * <p>
+ * Account documents live in the shared {@value #ACCOUNTS} collection, the
+ * MongoDB counterpart of the shared SQL {@code accounts} table: one document
+ * per account, keyed {@code {type}_{uuid}}, with {@code account_type},
+ * {@code account_uuid}, {@code created_at} and {@code updated_at}. MongoDB has
+ * no foreign keys, so every account-keyed write upserts the account first.
  */
 public class MCEconomyMongoDB implements IEconomyDatabase {
+
+    /** The shared collection every account document lives in. */
+    static final String ACCOUNTS = "accounts";
 
     private final MongoClient mongoClient;
     private final MongoDatabase database;
@@ -51,46 +60,47 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
 
     @Override
     public CompletableFuture<Account> createAccount(String accountType, UUID accountUuid) {
-        return CompletableFuture.supplyAsync(() -> {
-            MongoCollection<Document> accounts = database.getCollection("economy_account");
-            String id = accountType + "_" + accountUuid.toString();
-            
-            Document doc = accounts.findOneAndUpdate(
-                Filters.eq("_id", id),
-                Updates.combine(
-                    Updates.setOnInsert("account_type", accountType),
-                    Updates.setOnInsert("account_uuid", accountUuid.toString()),
-                    Updates.setOnInsert("created_at", Instant.now().toString()),
-                    Updates.set("updated_at", Instant.now().toString())
-                ),
-                new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
-            );
-            
-            return new Account(
-                doc.getString("account_type"), 
-                UUID.fromString(doc.getString("account_uuid")), 
-                Instant.parse(doc.getString("created_at")), 
-                Instant.parse(doc.getString("updated_at"))
-            );
-        });
+        return CompletableFuture.supplyAsync(() -> readAccount(ensureAccount(accountType, accountUuid)));
+    }
+
+    /**
+     * Upserts the shared account document, so every account-keyed write that
+     * follows has its account.
+     *
+     * @return The account document after the upsert.
+     */
+    private Document ensureAccount(String accountType, UUID accountUuid) {
+        MongoCollection<Document> accounts = database.getCollection(ACCOUNTS);
+        String id = accountType + "_" + accountUuid.toString();
+        return accounts.findOneAndUpdate(
+            Filters.eq("_id", id),
+            Updates.combine(
+                Updates.setOnInsert("account_type", accountType),
+                Updates.setOnInsert("account_uuid", accountUuid.toString()),
+                Updates.setOnInsert("created_at", Instant.now().toString()),
+                Updates.set("updated_at", Instant.now().toString())
+            ),
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
+        );
+    }
+
+    /** Maps a shared account document to an {@link Account}. */
+    private static Account readAccount(Document doc) {
+        return new Account(
+            doc.getString("account_type"),
+            UUID.fromString(doc.getString("account_uuid")),
+            Instant.parse(doc.getString("created_at")),
+            Instant.parse(doc.getString("updated_at"))
+        );
     }
 
     @Override
     public CompletableFuture<Optional<Account>> getAccount(String accountType, UUID accountUuid) {
         return CompletableFuture.supplyAsync(() -> {
-            MongoCollection<Document> accounts = database.getCollection("economy_account");
+            MongoCollection<Document> accounts = database.getCollection(ACCOUNTS);
             String id = accountType + "_" + accountUuid.toString();
             Document doc = accounts.find(Filters.eq("_id", id)).first();
-            
-            if (doc != null) {
-                return Optional.of(new Account(
-                    doc.getString("account_type"), 
-                    UUID.fromString(doc.getString("account_uuid")), 
-                    Instant.parse(doc.getString("created_at")), 
-                    Instant.parse(doc.getString("updated_at"))
-                ));
-            }
-            return Optional.empty();
+            return Optional.ofNullable(doc).map(MCEconomyMongoDB::readAccount);
         });
     }
 
@@ -164,8 +174,8 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
     @Override
     public CompletableFuture<Wallet> getWallet(String accountType, UUID accountUuid, int currencyId) {
         return CompletableFuture.supplyAsync(() -> {
-            createAccount(accountType, accountUuid).join();
-            
+            ensureAccount(accountType, accountUuid);
+
             MongoCollection<Document> wallets = database.getCollection("economy_wallet");
             String id = accountType + "_" + accountUuid.toString() + "_" + currencyId;
             
@@ -214,6 +224,7 @@ public class MCEconomyMongoDB implements IEconomyDatabase {
     @Override
     public CompletableFuture<Void> insertLog(String accountType, UUID accountUuid, LogScope scope, int currencyId, long amount, UUID transactionUuid, String referenceType, String referenceId) {
         return CompletableFuture.runAsync(() -> {
+            ensureAccount(accountType, accountUuid);
             if (transactionUuid != null) {
                 MongoCollection<Document> txs = database.getCollection("economy_transactions");
                 txs.updateOne(

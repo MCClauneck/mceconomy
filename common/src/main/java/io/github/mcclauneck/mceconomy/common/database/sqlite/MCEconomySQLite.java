@@ -3,6 +3,7 @@ package io.github.mcclauneck.mceconomy.common.database.sqlite;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.mcclauneck.mceconomy.common.database.sql.AbstractSqlEconomyDatabase;
+import io.github.mcclauneck.mceconomy.common.database.sql.SharedAccounts;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -30,7 +31,7 @@ public class MCEconomySQLite extends AbstractSqlEconomyDatabase {
      * @param databaseFile The file to store the SQLite database.
      */
     public MCEconomySQLite(File databaseFile) {
-        super(createDataSource(databaseFile), "Failed to initialize SQLite schema");
+        super(createDataSource(databaseFile), "Failed to initialize SQLite schema", SharedAccounts.SQLITE);
         initialize();
     }
 
@@ -55,19 +56,13 @@ public class MCEconomySQLite extends AbstractSqlEconomyDatabase {
     protected void createSchema(Statement stmt) throws SQLException {
         stmt.execute("PRAGMA foreign_keys = ON;");
 
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_account (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid))");
         stmt.execute("CREATE TABLE IF NOT EXISTS economy_currency (id INTEGER PRIMARY KEY AUTOINCREMENT, system_code TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL, is_transferable INTEGER NOT NULL DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         // Migrate files created before the column existed. SQLite has no
         // ADD COLUMN IF NOT EXISTS, so the duplicate-column error is swallowed.
         addColumnIfMissing(stmt, "ALTER TABLE economy_currency ADD COLUMN is_transferable INTEGER NOT NULL DEFAULT 1");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid TEXT PRIMARY KEY, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'completed', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE CASCADE)");
-        stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, scope TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL, transaction_uuid TEXT, reference_type TEXT, reference_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES economy_account (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
-    }
-
-    @Override
-    protected String insertAccountIfAbsentSql() {
-        return "INSERT OR IGNORE INTO economy_account (account_type, account_uuid) VALUES (?, ?)";
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_wallet (account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (account_type, account_uuid, currency_id), FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE CASCADE, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_transactions (transaction_uuid TEXT PRIMARY KEY, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'completed', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE CASCADE)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS economy_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, account_type TEXT NOT NULL, account_uuid TEXT NOT NULL, scope TEXT NOT NULL, currency_id INTEGER NOT NULL, amount INTEGER NOT NULL, transaction_uuid TEXT, reference_type TEXT, reference_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (account_type, account_uuid) REFERENCES accounts (account_type, account_uuid) ON DELETE RESTRICT, FOREIGN KEY (currency_id) REFERENCES economy_currency (id) ON DELETE RESTRICT, FOREIGN KEY (transaction_uuid) REFERENCES economy_transactions (transaction_uuid) ON DELETE SET NULL)");
     }
 
     @Override
