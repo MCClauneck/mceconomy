@@ -45,3 +45,11 @@ every wallet belongs to the player, with or without MCIdentity installed.
 ### Task 1 — plan/profession-wearing
 
 Recorded the plan.
+
+### Task 2 — refactor/profession-wearing
+
+Removed the MCIdentity integration: `AccountBinding` always binds `AccountSource.players()`
+and registers `PlayerAccountListener`; `IdentitySource`, `MCIdentityBridge`,
+`IdentityAccountListener` and `AccountTypes.IDENTITY` are deleted, and MCIdentity left
+every `softdepend`. The tool port is `isAccountReady()` / `accountUuid(UUID)`. Reworded the
+README, module READMEs and wiki.

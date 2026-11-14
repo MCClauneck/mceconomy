@@ -7,9 +7,8 @@ build and the optional external databases.
 
 ## Build and publish variables
 
-GitHub Packages authentication is required to resolve the MCIdentity `compileOnly` artifacts
-(building the `bukkit` module) and to publish the `api`, `common`, and `bukkit` libraries. The
-token needs the `read:packages` scope to build and `write:packages` to publish.
+GitHub Packages authentication is required to publish the `api`, `common`, and `bukkit`
+libraries. The token needs the `write:packages` scope.
 
 The `bukkit` module, the [`io.github.mcengine.build-logic`](https://github.com/MCEngine/gradle-plugin)
 convention plugin the root build applies, and publishing all resolve the credentials from

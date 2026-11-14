@@ -15,41 +15,26 @@ the SpigotMC API only.
 | --- | --- |
 | `AbstractMCEconomyPlugin` | Shared plugin bootstrap extended by every platform entry point; it sequences the enable steps below and exposes the provider, account binding, and agents settings. |
 | `database/EconomyDatabaseFactory` | Builds the backend `database.type` selects (SQLite, MySQL, PostgreSQL, MongoDB, or the central server). |
-| `host/AccountBinding` | Decides at enable time whether wallets belong to MCIdentity identities or to players, and registers the matching account listener. |
+| `host/AccountBinding` | Binds every wallet to its player at enable time (`AccountSource.players()`) and registers the player account listener. |
 | `commands/CommandRegistrar` | Wires the `/balance` and `/pay` executors and the `/pay` tab completer. |
-| `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's active identity. |
+| `commands/BalanceCommand` | `/balance` — opens the paged balance GUI for the sender's own account. |
 | `commands/CommandPermissions` | The `mcclauneck.mceconomy.command.*` nodes the commands check. |
-| `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two active identities. |
+| `commands/PayCommand`, `commands/PayTabCompleter` | `/pay <player> <currency> <amount>` — fully logged transfer between two players' accounts. |
 | `config/CurrencyConfig` | Parses the `currencies` config section: definitions (display name, transferable) and per-currency head textures. |
 | `config/AgentsSettings`, `config/MCAgentsGlobal` | Read the `agents` config block (`model`, `token`, both `global` by default) and resolve `global` from the running MCAgents plugin's `getAgentsModel()` / `getAgentsToken()` by reflection; exposed as `getAgentsModel()` / `getAgentsToken()` on `AbstractMCEconomyPlugin`. |
 | `event/EconomyTransactionEvent` | Cancellable Bukkit event fired before a balance change; the veto point (e.g. cancel giving money to a player). |
 | `event/EconomyWalletUpdateEvent` | Notification-only Bukkit event fired after a wallet balance changes. |
 | `gui/BalanceGui`, `gui/BalanceGuiHolder`, `gui/BalanceGuiListener` | The paged balance GUI, its inventory holder, and the click listener. |
-| `listener/IdentityAccountListener` | Ensures an `identity` economy account exists (keyed by the identity UUID) whenever a player equips an MCIdentity identity. |
-| `host/MCIdentityBridge` | Reflective binding to the MCIdentity plugin: the active-identity lookup and the equip-event subscription. |
+| `listener/PlayerAccountListener` | Ensures a `player` economy account exists (keyed by the player UUID) when a player joins. |
 | `scheduler/PlatformScheduler`, `scheduler/Schedulers`, `scheduler/BukkitPlatformScheduler` | Platform-agnostic scheduling (async work and entity-thread hops); Folia ships its own implementation in the foliamc module. |
 | `util/SkullTextures` | Builds custom player heads from base64 texture values. |
 
-The plugin integrates through MCIdentity events only — it registers no raw player
-listeners, so all economy state stays bound to identities rather than player accounts.
+## Accounts
 
-## MCIdentity integration
-
-MCEconomy depends on the **MCIdentity** plugin. Each MCIdentity identity is a fully
-separate character, so `IdentityAccountListener` reacts to MCIdentity's equip event and
-creates that identity's economy account with the account type `identity`
-(`AccountTypes.IDENTITY`), keyed by the **identity UUID** — never the base player UUID.
-This keeps wallets and transaction logs separate per identity.
-
-The integration is **reflective**, not a build dependency. `host/MCIdentityBridge` resolves
-`MCIdentityProvider` and the equip event class through the MCIdentity plugin's own
-classloader at enable time. Because the event type is only known at runtime it cannot appear
-in an `@EventHandler` signature, so the subscription goes through Bukkit's lower-level
-`registerEvent`, which takes the event type as a `Class`. The pure contract the rest of the
-module talks to is `IdentitySource` in the `api` module.
-
-Consequently no `io.github.mcoriax` artifact is on the compile classpath, nothing is shaded,
-and consumers of this published library inherit no MCIdentity dependency.
+Every wallet belongs to the player: account type `player` (`AccountTypes.PLAYER`) keyed by
+the player UUID. Since MCIdentity 5.0.0 a player has one character whatever profession they
+wear, so this module reads nothing from MCIdentity, and consumers of this published library
+inherit no MCIdentity dependency.
 
 ## Dependencies
 
@@ -59,9 +44,6 @@ into the single distributed jar, so this module never bundles them itself.
 - [`api`](../api) — `compileOnly` (via `project(':api')`).
 - [`common`](../common) — `compileOnly` (via `project(':common')`).
 - `org.spigotmc:spigot-api` — `compileOnly` (provided by the server).
-- `io.github.mcoriax:api` / `io.github.mcoriax:common` / `io.github.mcoriax:bukkit`
-  (MCIdentity `2.0.0`) — `compileOnly`, resolved from the MCIdentity GitHub Packages
-  registry (provided by the MCIdentity plugin at runtime).
 
 ## Building
 

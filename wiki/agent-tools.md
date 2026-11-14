@@ -18,12 +18,11 @@ All tools are filed under the MCAgents category `economy`.
 
 | Tool | Arguments | Returns |
 | --- | --- | --- |
-| `economy_get_my_balances` | `currency` (optional): a currency code such as `coin` | The balances held by the player's account — the **active MCIdentity identity**, or the player when MCIdentity is not installed —, one line per currency (`Coin (coin): 1,234`), or only the requested currency. Same wallets and order as `/balance`. |
+| `economy_get_my_balances` | `currency` (optional): a currency code such as `coin` | The balances held by the player's own account, one line per currency (`Coin (coin): 1,234`), or only the requested currency. Same wallets and order as `/balance`. |
 | `economy_list_currencies` | none | Every currency on the server: its code, display name, and whether it can be sent with `/pay`. |
 
-Wallets belong to identities, not to the raw player, exactly as for `/balance`. A player with no
-equipped identity is told to equip one first; an unknown currency code is answered with the list
-of known codes.
+Wallets belong to the player (account type `player`, the player UUID), exactly as for
+`/balance`. An unknown currency code is answered with the list of known codes.
 
 ## MCAgents is optional
 

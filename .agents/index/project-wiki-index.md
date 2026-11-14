@@ -13,7 +13,7 @@ description: Index of wiki — the human documentation pages for MCEconomy, and 
 | File | Purpose |
 |---|---|
 | [`wiki/api.md`](../../wiki/api.md) | Developer API guide for plugins integrating with MCEconomy (`api`, `common`, `bukkit`). |
-| [`wiki/system.md`](../../wiki/system.md) | System architecture: modules, platform abstraction, MCIdentity binding, accounts, GUI. |
+| [`wiki/system.md`](../../wiki/system.md) | System architecture: modules, platform abstraction, player accounts, GUI. |
 | [`wiki/currencies.md`](../../wiki/currencies.md) | The default currencies, base coins and credit, reserved codes, and the warning before adding one. |
 | [`wiki/requirements.md`](../../wiki/requirements.md) | Functional and non functional requirements. |
 | [`wiki/agent-tools.md`](../../wiki/agent-tools.md) | The optional MCAgents AI tools: names, results, and permission nodes. |

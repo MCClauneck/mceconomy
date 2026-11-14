@@ -64,38 +64,14 @@ are terminal shaded jars. The `engine` module is the single place that shades `a
 and `bukkit` into the one universal distributable jar; the per-platform modules ship only their
 own entry point classes, which the engine bundles.
 
-## MCIdentity integration
+## Accounts
 
-MCEconomy integrates with the **MCIdentity** plugin (`MCOriax/mcidentity`) and declares it as
-a soft dependency (`softdepend: [MCIdentity, MCAgents]` in every platform `plugin.yml`), so
-MCIdentity is optional and, when installed, always initializes first.
-
-Which account money belongs to depends on whether MCIdentity is installed. The commands and
-AI tools read the active `AccountSource` (`api/host/AccountSource`) and take one path for both:
-
-| Server | Account type | Account UUID | Created by |
-| --- | --- | --- | --- |
-| MCIdentity installed | `identity` (`AccountTypes.IDENTITY`) | the active identity's UUID | `IdentityAccountListener`, on identity equip |
-| MCIdentity not installed | `player` (`AccountTypes.PLAYER`) | the player's UUID | `PlayerAccountListener`, on join |
-
-Each MCIdentity identity is a fully separate character, so with MCIdentity economy data is
-bound to the **identity UUID** — never the base player UUID. When a player equips an identity, the shared
-`IdentityAccountListener` ensures an economy account exists for that identity using the
-account type `identity` (`AccountTypes.IDENTITY` in the `api` module). Every identity a
-player owns therefore keeps its own wallets and transaction logs.
-
-MCIdentity is **not** a build dependency. It is bound by runtime reflection: at enable time
-`bukkit/host/MCIdentityBridge` resolves the provider and the equip event through the
-MCIdentity plugin's own classloader (the `softdepend` declaration guarantees it loaded first).
-No `io.github.mcoriax` artifact appears anywhere in this build, so the project compiles
-without GitHub Packages credentials, does not break when MCIdentity republishes under new
-coordinates, and passes no MCIdentity dependency on to consumers of the published
-`api`/`common`/`bukkit` libraries. `gradle.properties` records the MCIdentity release the
-bridge targets (`mcidentity-version`, currently `4.0.1`). A missing or incompatible
-MCIdentity is logged once and leaves `/balance` and `/pay` unavailable rather than stopping the
-server from starting; MCEconomy never falls back to player wallets when MCIdentity is installed,
-so money cannot land in the wrong wallet. Wallets created in one mode are not moved when the
-other mode is switched on later.
+Every wallet belongs to the player: account type `player` (`AccountTypes.PLAYER`) and the
+player's UUID, created by `PlayerAccountListener` when the player joins. Since MCIdentity 5.0.0
+a player has one character whatever profession they wear, so MCEconomy does not depend on
+MCIdentity at all. The commands and AI tools resolve the account through `AccountSource`
+(`api/host/AccountSource`), and the `(account_type, account_uuid)` pair stays the key, so other
+plugins can add their own account types.
 
 ## Developer API
 
@@ -107,7 +83,7 @@ Bukkit events (including how to cancel giving money to a player).
 ## Commands
 
 Both commands are available to every player by default, and both operate on the player's own
-account: the **active MCIdentity identity** when MCIdentity is installed, the player otherwise:
+account:
 
 | Command | Permission | Description |
 | --- | --- | --- |
@@ -193,15 +169,13 @@ source of truth for every module.
   not already installed; otherwise install a JDK 25 locally.
 - **Minecraft server:** a SpigotMC, PaperMC, or Folia server on `api-version` `1.20` or newer.
   The single universal jar detects the server automatically, so the same jar runs on all three.
-- **MCIdentity plugin (optional):** MCEconomy soft-depends on MCIdentity
-  (`softdepend: [MCIdentity, MCAgents]`). With it, money belongs to identities; without it,
-  money belongs to players.
+- **MCAgents (optional):** MCEconomy soft-depends on MCAgents (`softdepend: [MCAgents]`) to
+  offer its read-only AI tools. It needs no other plugin.
 - **Runtime libraries:** the platform `plugin.yml` declares the database drivers the server
   downloads at runtime (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
 - **Credentials (GitHub Packages):** only **publishing** needs them — a token with the
   `write:packages` scope, resolved from `GITHUB_ACTOR`/`GITHUB_TOKEN`. Building, including
-  the `bukkit` module, needs no credentials at all now that MCIdentity is bound by
-  reflection.
+  the `bukkit` module, needs no credentials at all.
 
 ## Documentation
 

@@ -13,7 +13,7 @@ database dependencies**.
 | --- | --- |
 | `IEconomyDatabase` | The asynchronous database contract every backend implements. |
 | `Account` | An economy holder identified by an `accountType` plus a `UUID`. |
-| `AccountTypes` | Well-known `accountType` constants, e.g. `IDENTITY` (`"identity"`) for MCIdentity-bound accounts. |
+| `AccountTypes` | Well-known `accountType` constants: `PLAYER` (`"player"`) for a player's own accounts. |
 | `Currency` | A currency identified by a unique `systemCode` with a `displayName`. |
 | `Wallet` | The balance of one account for one currency. |
 | `LogScope` | Audit categories for balance changes (`SEND`, `RECEIVE`, `SPEND`, `DONATE`). |
