@@ -22,10 +22,9 @@ import java.util.logging.Logger;
 
 /**
  * {@code /pay <player> <currency> <amount>} — moves money from the sender's
- * account to the target player's account: each side's <em>active identity</em>
- * with MCIdentity, each player without it.
+ * account to the target player's account.
  * <p>
- * With MCIdentity both sides must have an identity equipped. The transfer is
+ * The transfer is
  * atomic and fully logged: the shared provider writes a {@code send} log row
  * for the paying account, a {@code receive} row for the receiving account,
  * and a transaction receipt
@@ -112,18 +111,18 @@ public class PayCommand implements CommandExecutor {
         }
 
         if (this.accounts == null || !this.accounts.isReady()) {
-            player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
+            player.sendMessage(ChatColor.RED + "The economy is not ready yet. Try again in a moment.");
             return true;
         }
 
-        // Payments move between accounts: active identities with MCIdentity, players without.
+        // Payments move between the two players' own accounts.
         long finalAmount = amount;
         AccountSource source = this.accounts;
         source.accountUuid(player.getUniqueId())
                 .thenCombine(source.accountUuid(target.getUniqueId()),
-                        (senderIdentity, targetIdentity) -> {
+                        (senderAccount, targetAccount) -> {
                             pay(player, target, currency, finalAmount, source.accountType(),
-                                    senderIdentity, targetIdentity);
+                                    senderAccount, targetAccount);
                             return null;
                         })
                 .exceptionally(throwable -> {
@@ -136,22 +135,21 @@ public class PayCommand implements CommandExecutor {
 
     /**
      * Validates both accounts, honors the transaction veto events, and runs
-     * the logged transfer. An empty side only happens with MCIdentity, when
-     * that player has no identity equipped.
+     * the logged transfer. An empty side means that player has no account
+     * resolved yet.
      */
     private void pay(Player player, Player target, Currency currency, long amount, String accountType,
-                     Optional<UUID> senderIdentity, Optional<UUID> targetIdentity) {
-        if (senderIdentity.isEmpty()) {
-            player.sendMessage(ChatColor.RED
-                    + "You have no active identity. Money belongs to your active identity, so equip one first.");
+                     Optional<UUID> senderAccount, Optional<UUID> targetAccount) {
+        if (senderAccount.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "You have no economy account yet. Try again in a moment.");
             return;
         }
-        if (targetIdentity.isEmpty()) {
-            player.sendMessage(ChatColor.RED + target.getName() + " has no active identity to receive the payment.");
+        if (targetAccount.isEmpty()) {
+            player.sendMessage(ChatColor.RED + target.getName() + " has no economy account to receive the payment.");
             return;
         }
-        UUID from = senderIdentity.get();
-        UUID to = targetIdentity.get();
+        UUID from = senderAccount.get();
+        UUID to = targetAccount.get();
 
         // Honor the shared veto convention for both the debit and the credit.
         EconomyTransactionEvent debit = new EconomyTransactionEvent(
@@ -194,9 +192,9 @@ public class PayCommand implements CommandExecutor {
      * Fires the {@link EconomyWalletUpdateEvent} notification with the
      * account's fresh balance, so other plugins can react to the payment.
      */
-    private void announceNewBalance(String accountType, UUID identityUuid, Currency currency) {
-        provider.getBalance(accountType, identityUuid, currency).thenAccept(balance ->
+    private void announceNewBalance(String accountType, UUID accountUuid, Currency currency) {
+        provider.getBalance(accountType, accountUuid, currency).thenAccept(balance ->
                 Bukkit.getPluginManager().callEvent(new EconomyWalletUpdateEvent(
-                        accountType, identityUuid, currency.systemCode(), balance)));
+                        accountType, accountUuid, currency.systemCode(), balance)));
     }
 }

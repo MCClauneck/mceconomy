@@ -185,15 +185,15 @@ class MCEconomyProviderCurrencyTest {
 
         UUID sender = UUID.randomUUID();
         UUID receiver = UUID.randomUUID();
-        database.setWalletBalance("identity", sender, gold.id(), 500L).join();
+        database.setWalletBalance("player", sender, gold.id(), 500L).join();
 
         CompletionException thrown = assertThrows(CompletionException.class, () ->
-                provider.transferBalance("identity", sender, "identity", receiver,
+                provider.transferBalance("player", sender, "player", receiver,
                         gold, 100, UUID.randomUUID(), "test", "transfer").join());
         assertInstanceOf(IllegalStateException.class, thrown.getCause());
 
-        assertEquals(500L, provider.getBalance("identity", sender, gold).join(), "sender balance is untouched");
-        assertEquals(0L, provider.getBalance("identity", receiver, gold).join(), "receiver balance is untouched");
+        assertEquals(500L, provider.getBalance("player", sender, gold).join(), "sender balance is untouched");
+        assertEquals(0L, provider.getBalance("player", receiver, gold).join(), "receiver balance is untouched");
     }
 
     @Test
@@ -205,11 +205,11 @@ class MCEconomyProviderCurrencyTest {
 
         UUID sender = UUID.randomUUID();
         UUID receiver = UUID.randomUUID();
-        database.setWalletBalance("identity", sender, coin.id(), 500L).join();
+        database.setWalletBalance("player", sender, coin.id(), 500L).join();
 
-        assertTrue(provider.transferBalance("identity", sender, "identity", receiver,
+        assertTrue(provider.transferBalance("player", sender, "player", receiver,
                 coin, 100, UUID.randomUUID(), "test", "transfer").join());
-        assertEquals(400L, provider.getBalance("identity", sender, coin).join());
-        assertEquals(100L, provider.getBalance("identity", receiver, coin).join());
+        assertEquals(400L, provider.getBalance("player", sender, coin).join());
+        assertEquals(100L, provider.getBalance("player", receiver, coin).join());
     }
 }

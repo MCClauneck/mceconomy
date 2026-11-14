@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * The paged {@code /balance} GUI: one custom head per currency showing the
- * viewing identity's balance, with previous/next navigation when the
+ * viewing player's balance, with previous/next navigation when the
  * currencies do not fit a single page.
  *
  * <p>The inventory height grows with the currencies shown on the current page:

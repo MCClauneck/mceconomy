@@ -21,7 +21,7 @@ public final class CommandRegistrar {
     /**
      * @param plugin           The plugin whose {@code plugin.yml} declares the commands.
      * @param provider         The central economy provider.
-     * @param accounts         The account binding, or {@code null} when unavailable.
+     * @param accounts         The account binding.
      * @param currencyTextures Base64 head textures keyed by currency system code.
      * @param logger           The plugin logger for error reporting.
      */

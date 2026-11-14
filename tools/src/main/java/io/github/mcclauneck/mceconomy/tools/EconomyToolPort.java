@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * The platform-free view of MCEconomy that the AI tools read through.
  *
- * <p>The bukkit module implements it over the live provider and the MCIdentity
+ * <p>The bukkit module implements it over the live provider and the account
  * binding. Every method is read-only and none touches a player entity, so the
  * tools are safe to run from whatever thread MCAgents calls them on.</p>
  */
@@ -22,9 +22,9 @@ public interface EconomyToolPort {
     boolean isEconomyReady();
 
     /**
-     * @return {@code true} when the MCIdentity binding is loaded and answering lookups.
+     * @return {@code true} when the account binding is loaded and answering lookups.
      */
-    boolean isIdentityReady();
+    boolean isAccountReady();
 
     /**
      * Checks whether a player with this UUID is online on this server.
@@ -35,13 +35,13 @@ public interface EconomyToolPort {
     boolean isOnlinePlayer(UUID playerUuid);
 
     /**
-     * Resolves the identity the player currently has equipped. Wallets belong to
-     * identities, never to the raw player.
+     * Resolves the account a player's wallets are keyed by: the player UUID
+     * under account type {@code player}.
      *
      * @param playerUuid The player.
-     * @return The active identity UUID, or empty when there is none.
+     * @return The account UUID, or empty when there is none.
      */
-    CompletableFuture<Optional<UUID>> activeIdentity(UUID playerUuid);
+    CompletableFuture<Optional<UUID>> accountUuid(UUID playerUuid);
 
     /**
      * @return Every cached currency, in the same order the {@code /balance} GUI shows them.
@@ -49,11 +49,11 @@ public interface EconomyToolPort {
     List<Currency> currencies();
 
     /**
-     * Reads one balance of an identity's wallet, asynchronously.
+     * Reads one balance of a player's wallet, asynchronously.
      *
-     * @param identityUuid The identity whose wallet is read.
-     * @param currency     The currency.
+     * @param accountUuid The account whose wallet is read.
+     * @param currency    The currency.
      * @return The balance.
      */
-    CompletableFuture<Long> balance(UUID identityUuid, Currency currency);
+    CompletableFuture<Long> balance(UUID accountUuid, Currency currency);
 }

@@ -21,8 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * {@code /balance} — opens the paged balance GUI for the sender's account: the
- * <em>active identity</em> with MCIdentity, the player without it. Requires
+ * {@code /balance} — opens the paged balance GUI for the sender's own account.
+ * Requires
  * {@link CommandPermissions#BALANCE}, which every player has by default.
  * <p>
  * The command first resolves the account through the {@link AccountSource} and
@@ -74,7 +74,7 @@ public class BalanceCommand implements CommandExecutor {
             return true;
         }
         if (this.accounts == null || !this.accounts.isReady()) {
-            player.sendMessage(ChatColor.RED + "The identity system is not ready yet. Try again in a moment.");
+            player.sendMessage(ChatColor.RED + "The economy is not ready yet. Try again in a moment.");
             return true;
         }
 
@@ -83,7 +83,7 @@ public class BalanceCommand implements CommandExecutor {
                 .thenAccept(optAccount -> optAccount.ifPresentOrElse(
                         accountUuid -> openFor(player, source.accountType(), accountUuid),
                         () -> player.sendMessage(ChatColor.RED
-                                + "You have no active identity. Balances belong to your active identity, so equip one first.")))
+                                + "You have no economy account yet. Try again in a moment.")))
                 .exceptionally(throwable -> {
                     this.logger.log(Level.SEVERE, "Failed to resolve the account for /balance", throwable);
                     player.sendMessage(ChatColor.RED + "Could not load your balance. Try again later.");

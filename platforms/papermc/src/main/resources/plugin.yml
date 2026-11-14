@@ -6,15 +6,15 @@ api-version: '1.20'
 author: MCClauneck
 description: A plugin for PaperMC
 
-softdepend: [MCIdentity, MCAgents]
+softdepend: [MCAgents]
 
 commands:
   balance:
-    description: Open your balance GUI (your active identity with MCIdentity).
+    description: Open your balance GUI.
     usage: /balance
     permission: mcclauneck.mceconomy.command.balance
   pay:
-    description: Pay another player (their active identity with MCIdentity).
+    description: Pay another player.
     usage: /pay <player> <currency> <amount>
     permission: mcclauneck.mceconomy.command.pay
 

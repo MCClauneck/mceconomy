@@ -20,8 +20,8 @@ import java.util.UUID;
  * <p>
  * The {@link #getAmount() amount} is always the non-negative magnitude of the change;
  * the {@link #getScope() scope} tells you whether it is a credit or a debit. The
- * account is identified by an account type plus a UUID — for MCIdentity-bound money
- * this is the identity UUID (see {@code AccountTypes.IDENTITY}), never the base player
+ * account is identified by an account type plus a UUID — for a player's money
+ * this is the player UUID (see {@code AccountTypes.PLAYER}), never the base player
  * UUID.
  * <p>
  * The event marks itself asynchronous whenever it is fired off the primary thread, so
@@ -44,8 +44,8 @@ public class EconomyTransactionEvent extends Event implements Cancellable {
 
     /**
      * Constructs the transaction event.
-     * @param accountType The type of account (e.g. {@code "identity"}).
-     * @param accountUuid The UUID of the account (the identity UUID for identity money).
+     * @param accountType The type of account (e.g. {@code "player"}).
+     * @param accountUuid The UUID of the account (the player UUID for player money).
      * @param currencySystemCode The system code of the currency being changed.
      * @param amount The non-negative magnitude of the change.
      * @param scope The scope of the change (e.g. {@link LogScope#RECEIVE} for a credit).

@@ -15,8 +15,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Serves the AI tools from the live plugin: the provider's currency cache and
- * asynchronous wallet reads, and the account binding (the active MCIdentity
- * identity when it is installed, the player when it is not).
+ * asynchronous wallet reads, and the account binding (the player's own
+ * account).
  *
  * <p>Nothing here touches a player entity — the online check is a lookup in
  * the server's player map and every balance read is the provider's own async
@@ -41,7 +41,7 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     }
 
     @Override
-    public boolean isIdentityReady() {
+    public boolean isAccountReady() {
         AccountSource accounts = this.plugin.getAccounts();
         return accounts != null && accounts.isReady();
     }
@@ -52,7 +52,7 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     }
 
     @Override
-    public CompletableFuture<Optional<UUID>> activeIdentity(UUID playerUuid) {
+    public CompletableFuture<Optional<UUID>> accountUuid(UUID playerUuid) {
         AccountSource accounts = this.plugin.getAccounts();
         if (accounts == null) {
             return CompletableFuture.completedFuture(Optional.empty());
@@ -67,12 +67,12 @@ public final class BukkitEconomyToolPort implements EconomyToolPort {
     }
 
     @Override
-    public CompletableFuture<Long> balance(UUID identityUuid, Currency currency) {
+    public CompletableFuture<Long> balance(UUID accountUuid, Currency currency) {
         MCEconomyProvider provider = this.plugin.getProvider();
         AccountSource accounts = this.plugin.getAccounts();
         if (provider == null || accounts == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("MCEconomy is not enabled"));
         }
-        return provider.getBalance(accounts.accountType(), identityUuid, currency);
+        return provider.getBalance(accounts.accountType(), accountUuid, currency);
     }
 }

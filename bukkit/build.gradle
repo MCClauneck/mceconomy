@@ -10,10 +10,8 @@ description = "MCClauneck Plugin Bukkit"
 
 repositories {
     // Module-specific repositories only; mavenCentral is provided by the root build.
-    // No GitHub Packages registry is declared: MCIdentity is reached through
-    // runtime reflection (see bukkit/host/), so neither its artifacts nor the
-    // credentials to download them are part of this build — and consumers of the
-    // published library inherit no MCIdentity dependency either.
+    // No GitHub Packages registry is declared: MCEconomy depends on no MCOriax
+    // plugin, so consumers of the published library inherit none either.
     maven {
         url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }

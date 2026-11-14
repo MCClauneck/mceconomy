@@ -56,15 +56,15 @@ class MCEconomySQLiteTest {
     @Test
     void createsAccountAndWalletOnFirstRead() {
         UUID account = UUID.randomUUID();
-        assertTrue(this.database.getAccount("identity", account).join().isEmpty());
+        assertTrue(this.database.getAccount("player", account).join().isEmpty());
 
         Currency coin = this.database.createCurrency("coin", "Coin", true).join();
-        Wallet wallet = this.database.getWallet("identity", account, coin.id()).join();
+        Wallet wallet = this.database.getWallet("player", account, coin.id()).join();
         assertEquals(0L, wallet.amount());
         assertEquals(account, wallet.accountUuid());
-        assertTrue(this.database.getAccount("identity", account).join().isPresent());
+        assertTrue(this.database.getAccount("player", account).join().isPresent());
 
-        Wallet set = this.database.setWalletBalance("identity", account, coin.id(), 250L).join();
+        Wallet set = this.database.setWalletBalance("player", account, coin.id(), 250L).join();
         assertEquals(250L, set.amount());
     }
 
@@ -72,11 +72,11 @@ class MCEconomySQLiteTest {
     void writesLogsWithAndWithoutTransaction() {
         UUID account = UUID.randomUUID();
         Currency coin = this.database.createCurrency("coin", "Coin", true).join();
-        this.database.createAccount("identity", account).join();
+        this.database.createAccount("player", account).join();
 
         UUID transaction = UUID.randomUUID();
-        this.database.insertLog("identity", account, LogScope.RECEIVE, coin.id(), 10L, transaction, "test", "a").join();
-        this.database.insertLog("identity", account, LogScope.SEND, coin.id(), -10L, transaction, "test", "b").join();
-        this.database.insertLog("identity", account, LogScope.SPEND, coin.id(), -1L, null, "test", "c").join();
+        this.database.insertLog("player", account, LogScope.RECEIVE, coin.id(), 10L, transaction, "test", "a").join();
+        this.database.insertLog("player", account, LogScope.SEND, coin.id(), -10L, transaction, "test", "b").join();
+        this.database.insertLog("player", account, LogScope.SPEND, coin.id(), -1L, null, "test", "c").join();
     }
 }
