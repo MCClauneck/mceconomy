@@ -50,3 +50,13 @@ MCMultiverse and MCRealm when they are installed.
 ### Task 1 — plan/shared-accounts
 
 Recorded the plan.
+
+### Task 2 — feat/shared-accounts
+
+`SharedAccounts` reads the canonical `accounts` statement of each dialect from
+`common/src/main/resources/schema/accounts/` and `AbstractSqlEconomyDatabase` runs it before
+the economy schema. `economy_account` and `archive_economy_account` are gone; every
+account-keyed table, the PostgreSQL archives included, references `accounts`.
+`ensureAccount` inserts the row before every wallet, transaction or log write, and MongoDB
+upserts into the `accounts` collection. `SharedAccountsTest` pins the three SHA-256 values.
+The system wiki gained a storage section.

@@ -46,6 +46,33 @@ player UUID. `AccountBinding` binds `AccountSource.players()` at enable time and
 one character whatever profession they wear, so MCEconomy reads nothing from MCIdentity and
 compiles against no MCIdentity artifact.
 
+## Storage
+
+Every SQL backend stores account rows in the shared `accounts` table, which MCMultiverse,
+MCRealm and the other account-keyed plugins create with the same statement. Whichever plugin
+starts first creates it with `CREATE TABLE IF NOT EXISTS`, and the others find it there.
+MCEconomy reads the statement byte for byte from `common/src/main/resources/schema/accounts/`,
+and `SharedAccountsTest` pins the SHA-256 of each dialect's file. MCEconomy never creates
+`account_property`, which belongs to MCMultiverse and MCRealm.
+
+| Table | Key | Account foreign key |
+| --- | --- | --- |
+| `accounts` | `(account_type, account_uuid)` | Shared table. |
+| `economy_currency` | `id`, unique `system_code` | None. |
+| `economy_wallet` | `(account_type, account_uuid, currency_id)` | `ON DELETE CASCADE` |
+| `economy_transactions` | `transaction_uuid` | `ON DELETE CASCADE` |
+| `economy_logs` | `id` | `ON DELETE RESTRICT` |
+| `archive_economy_wallet`, `archive_economy_logs`, `archive_economy_transactions` | As the live table (PostgreSQL only) | `ON DELETE RESTRICT` |
+| `archive_economy_currency` | `id` (PostgreSQL only) | None. |
+
+The account columns have the shared table's types in every account-keyed table: `TEXT` on
+SQLite, `VARCHAR(50)` and `VARCHAR(36)` on MySQL, and `VARCHAR(50)` and `UUID` on PostgreSQL.
+Before the first wallet, transaction or log write for an account, the backend inserts its
+`accounts` row unless it exists. MongoDB has no foreign keys, so it upserts the account's
+document in the `accounts` collection (`_id` `{type}_{uuid}`, with `account_type`,
+`account_uuid`, `created_at` and `updated_at`) before every account-keyed write. The central
+backend leaves its schema to the server.
+
 ## Accounts, wallets, and logging
 
 The `MCEconomyProvider` is the central entry point for balance operations: adding, removing,

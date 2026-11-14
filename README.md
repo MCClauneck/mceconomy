@@ -73,6 +73,10 @@ MCIdentity at all. The commands and AI tools resolve the account through `Accoun
 (`api/host/AccountSource`), and the `(account_type, account_uuid)` pair stays the key, so other
 plugins can add their own account types.
 
+Account rows live in the shared `accounts` table (the `accounts` collection on MongoDB), the
+same table MCMultiverse, MCRealm and the other account-keyed plugins use, and every wallet,
+transaction and log row references it. See [`wiki/system.md`](wiki/system.md#storage).
+
 ## Developer API
 
 Third-party plugins integrate with MCEconomy through the published `api`, `common`, and
