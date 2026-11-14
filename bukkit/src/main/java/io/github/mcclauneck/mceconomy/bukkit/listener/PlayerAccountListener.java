@@ -15,9 +15,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Binds MCEconomy accounts to players when MCIdentity is not installed.
+ * Binds MCEconomy accounts to players.
  * <p>
- * Without an identity system a player's money belongs to the player, so on
+ * A player's money belongs to the player, whichever MCIdentity profession they
+ * wear, so on
  * every join this handler ensures an economy account of type
  * {@link AccountTypes#PLAYER} exists for the <strong>player UUID</strong>.
  * Players already online when the plugin enables (a reload) are covered by

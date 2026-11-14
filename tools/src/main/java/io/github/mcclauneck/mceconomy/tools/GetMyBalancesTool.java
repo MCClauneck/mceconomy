@@ -13,9 +13,8 @@ import java.util.stream.Collectors;
  * {@code economy_get_my_balances} — reports the calling player's balances, in
  * every currency or in one. Read-only, and only ever the caller's own wallet.
  *
- * <p>Wallets belong to the player's <em>active MCIdentity identity</em>, as
- * they do for {@code /balance}, so the tool resolves the equipped identity
- * first and reports nothing when there is none.</p>
+ * <p>Wallets belong to the player, keyed by account type {@code player} and
+ * the player UUID, as they do for {@code /balance}.</p>
  */
 public final class GetMyBalancesTool implements PluginTool {
 
@@ -41,7 +40,7 @@ public final class GetMyBalancesTool implements PluginTool {
     @Override
     public String getDescription() {
         return "Gets the calling player's own money balances in this server's economy (MCEconomy), as held by "
-                + "their currently equipped identity. Returns every currency, or only one when 'currency' is given. "
+                + "the player's own account. Returns every currency, or only one when 'currency' is given. "
                 + "It cannot read another player's balance.";
     }
 
@@ -64,9 +63,9 @@ public final class GetMyBalancesTool implements PluginTool {
         if (!guard.allowed()) {
             return CompletableFuture.completedFuture(guard.error());
         }
-        if (!this.port.isIdentityReady()) {
+        if (!this.port.isAccountReady()) {
             return CompletableFuture.completedFuture(
-                    "Error: The identity system is not ready yet, so balances cannot be read. Try again in a moment.");
+                    "Error: The economy is not ready yet, so balances cannot be read. Try again in a moment.");
         }
 
         List<Currency> all = this.port.currencies();
@@ -88,25 +87,24 @@ public final class GetMyBalancesTool implements PluginTool {
         }
 
         try {
-            return this.port.activeIdentity(guard.playerUuid())
-                    .thenCompose(identity -> identity
-                            .map(identityUuid -> readBalances(identityUuid, wanted))
+            return this.port.accountUuid(guard.playerUuid())
+                    .thenCompose(account -> account
+                            .map(accountUuid -> readBalances(accountUuid, wanted))
                             .orElseGet(() -> CompletableFuture.completedFuture(
-                                    "You have no active identity. Balances belong to your active identity, "
-                                            + "so equip one first.")))
+                                    "You have no economy account yet. Try again in a moment.")))
                     .exceptionally(failure -> "Error: Could not read your balance right now. Try again later.");
         } catch (RuntimeException failure) {
             return CompletableFuture.completedFuture("Error: Could not read your balance right now. Try again later.");
         }
     }
 
-    private CompletableFuture<String> readBalances(UUID identityUuid, List<Currency> currencies) {
+    private CompletableFuture<String> readBalances(UUID accountUuid, List<Currency> currencies) {
         List<CompletableFuture<Long>> reads = new ArrayList<>(currencies.size());
         for (Currency currency : currencies) {
-            reads.add(this.port.balance(identityUuid, currency));
+            reads.add(this.port.balance(accountUuid, currency));
         }
         return CompletableFuture.allOf(reads.toArray(new CompletableFuture[0])).thenApply(ignored -> {
-            StringBuilder out = new StringBuilder("Your active identity's balances:");
+            StringBuilder out = new StringBuilder("Your balances:");
             for (int i = 0; i < currencies.size(); i++) {
                 Currency currency = currencies.get(i);
                 out.append("\n- ").append(currency.displayName()).append(" (").append(currency.systemCode())

@@ -10,15 +10,8 @@ package io.github.mcclauneck.mceconomy.api.models;
 public final class AccountTypes {
 
     /**
-     * Accounts owned by an MCIdentity identity. The account UUID is the
-     * <strong>identity UUID</strong> (never the base player UUID), so each
-     * identity a player owns keeps its own separate wallets and logs.
-     */
-    public static final String IDENTITY = "identity";
-
-    /**
-     * Accounts owned by a player. The account UUID is the player UUID. Used
-     * when MCIdentity is not installed, so each player keeps one set of wallets.
+     * Accounts owned by a player. The account UUID is the player UUID, so each
+     * player keeps one set of wallets whichever MCIdentity profession they wear.
      */
     public static final String PLAYER = "player";
 

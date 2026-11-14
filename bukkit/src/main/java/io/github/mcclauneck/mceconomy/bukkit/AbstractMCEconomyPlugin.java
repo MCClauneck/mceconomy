@@ -2,7 +2,6 @@ package io.github.mcclauneck.mceconomy.bukkit;
 
 import io.github.mcclauneck.mceconomy.api.database.IEconomyDatabase;
 import io.github.mcclauneck.mceconomy.api.host.AccountSource;
-import io.github.mcclauneck.mceconomy.api.host.IdentitySource;
 import io.github.mcclauneck.mceconomy.api.models.CurrencyDefinition;
 import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.BukkitEconomyToolPort;
 import io.github.mcclauneck.mceconomy.bukkit.bridge.mcagents.MCAgentsToolRegistrar;
@@ -27,18 +26,17 @@ import java.util.logging.Logger;
 /**
  * Shared bootstrap for every platform entry point.
  * <p>
- * The enable/disable lifecycle, config loading, database wiring, and MCIdentity
- * integration are identical across SpigotMC, PaperMC, and Folia, so they live
+ * The enable/disable lifecycle, config loading, database wiring, and account
+ * binding are identical across SpigotMC, PaperMC, and Folia, so they live
  * here once. Each platform module extends this class with a thin concrete entry
  * point.
  * </p>
  * <p>
  * The bootstrap only sequences the steps; each step lives in its own class:
  * {@link EconomyDatabaseFactory} picks the backend, {@link CurrencyConfig}
- * reads the currencies, {@link AccountBinding} decides whether wallets belong
- * to MCIdentity identities or to players, and {@link CommandRegistrar} wires
- * the commands. The commands and tools read the active {@link AccountSource}
- * and never test which binding is live.
+ * reads the currencies, {@link AccountBinding} binds every wallet to its
+ * player, and {@link CommandRegistrar} wires the commands. The commands and
+ * tools read the account through {@link AccountSource}.
  * </p>
  */
 public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
@@ -55,16 +53,8 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     private final Map<String, String> currencyTextures = new HashMap<>();
 
     /**
-     * Reflective binding to the MCIdentity plugin, resolved during
-     * {@link #onEnable()}. Null when MCIdentity is absent or incompatible.
-     */
-    private IdentitySource identities;
-
-    /**
-     * The account binding resolved during {@link #onEnable()}: identity
-     * accounts with MCIdentity, player accounts without it. Null when
-     * MCIdentity is installed but cannot be bound, in which case the commands
-     * report that and do nothing rather than credit the wrong wallet.
+     * The account binding resolved during {@link #onEnable()}: every wallet
+     * belongs to the player. Null until the plugin is enabled.
      */
     private AccountSource accounts;
 
@@ -120,14 +110,10 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
         logger.info("Ensuring configured currencies exist...");
         this.provider.ensureDefaultCurrencies().join();
 
-        // MCIdentity is optional. Installed, wallets belong to identities; absent,
-        // they belong to players. Installed but incompatible is reported and leaves
-        // the commands inert, so money never lands in the wrong wallet.
-        AccountBinding binding = AccountBinding.bind(this, this.provider, logger);
-        this.identities = binding.identities();
-        this.accounts = binding.accounts();
+        // Every wallet belongs to the player, keyed by the player UUID
+        this.accounts = AccountBinding.bind(this, this.provider, logger).accounts();
 
-        // The /balance GUI and /pay transfers, both bound to active identities
+        // The /balance GUI and /pay transfers, both between player accounts
         getServer().getPluginManager().registerEvents(new BalanceGuiListener(), this);
         CommandRegistrar.register(this, this.provider, this.accounts, this.currencyTextures, logger);
 
@@ -157,19 +143,8 @@ public abstract class AbstractMCEconomyPlugin extends JavaPlugin {
     }
 
     /**
-     * Gets the active MCIdentity binding, which resolves the identity a player
-     * currently has equipped.
-     * @return The binding, or {@code null} when MCIdentity is unavailable.
-     */
-    public IdentitySource getIdentities() {
-        return this.identities;
-    }
-
-    /**
-     * Gets the account binding money is keyed by: the active identity when
-     * MCIdentity is installed, the player when it is not.
-     * @return The binding, or {@code null} when MCIdentity is installed but
-     *         could not be bound.
+     * Gets the account binding money is keyed by: the player.
+     * @return The binding, or {@code null} before the plugin is enabled.
      */
     public AccountSource getAccounts() {
         return this.accounts;

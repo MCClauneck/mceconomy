@@ -38,29 +38,28 @@ class MCEconomyToolsTest {
     }
 
     private static final UUID ONLINE = UUID.randomUUID();
-    private static final UUID IDENTITY = UUID.randomUUID();
     private static final Currency COIN = new Currency(1, "coin", "Coin", true, Instant.EPOCH, Instant.EPOCH);
     private static final Currency GEM = new Currency(2, "gem", "Gem", false, Instant.EPOCH, Instant.EPOCH);
 
-    /** In-memory economy: one online player with one equipped identity. */
+    /** In-memory economy: one online player with their own account. */
     private static final class StubPort implements EconomyToolPort {
         final Map<String, Long> balances = new HashMap<>(Map.of("coin", 1234L, "gem", 5L));
         final Set<UUID> balanceReads = new java.util.HashSet<>();
 
         @Override public boolean isEconomyReady() { return true; }
-        @Override public boolean isIdentityReady() { return true; }
+        @Override public boolean isAccountReady() { return true; }
         @Override public boolean isOnlinePlayer(UUID playerUuid) { return ONLINE.equals(playerUuid); }
 
         @Override
-        public CompletableFuture<Optional<UUID>> activeIdentity(UUID playerUuid) {
-            return CompletableFuture.completedFuture(ONLINE.equals(playerUuid) ? Optional.of(IDENTITY) : Optional.empty());
+        public CompletableFuture<Optional<UUID>> accountUuid(UUID playerUuid) {
+            return CompletableFuture.completedFuture(ONLINE.equals(playerUuid) ? Optional.of(playerUuid) : Optional.empty());
         }
 
         @Override public List<Currency> currencies() { return List.of(COIN, GEM); }
 
         @Override
-        public CompletableFuture<Long> balance(UUID identityUuid, Currency currency) {
-            this.balanceReads.add(identityUuid);
+        public CompletableFuture<Long> balance(UUID accountUuid, Currency currency) {
+            this.balanceReads.add(accountUuid);
             return CompletableFuture.completedFuture(this.balances.get(currency.systemCode()));
         }
     }
@@ -88,7 +87,7 @@ class MCEconomyToolsTest {
         String result = ai.execute(Map.of(), new FakeAccount("player", ONLINE.toString(), 1, "secret")).join();
         assertTrue(result.contains("Coin (coin): 1,234"), result);
         assertTrue(result.contains("Gem (gem): 5"), result);
-        assertEquals(Set.of(IDENTITY), port.balanceReads, "balances are read from the identity wallet only");
+        assertEquals(Set.of(ONLINE), port.balanceReads, "balances are read from the player's own wallet only");
     }
 
     @Test
