@@ -7,7 +7,7 @@ folia-supported: true
 author: MCClauneck
 description: A plugin for FoliaMC
 
-softdepend: [MCAgents]
+softdepend: [MCAgents, MCMultiverse, MCRealm]
 
 commands:
   balance:

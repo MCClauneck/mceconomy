@@ -60,3 +60,8 @@ account-keyed table, the PostgreSQL archives included, references `accounts`.
 `ensureAccount` inserts the row before every wallet, transaction or log write, and MongoDB
 upserts into the `accounts` collection. `SharedAccountsTest` pins the three SHA-256 values.
 The system wiki gained a storage section.
+
+### Task 3 — chore/softdepend-universe
+
+Every `plugin.yml` soft depends on `[MCAgents, MCMultiverse, MCRealm]`, and the README
+requirements name both new soft dependencies.
