@@ -16,10 +16,11 @@ strictly responsible for **getting and setting data from the database**.
 | `currency/CurrencyListParser`, `currency/DefaultCurrencies` | Parse the `code,Display Name,transferable` entries; the built-in fallback currencies. |
 | `balance/BalanceLedger` | Reads, sets, adds, removes, and transfers balances, writing a log row for every change. |
 | `database/sql/AbstractSqlEconomyDatabase` | The JDBC plumbing the three SQL backends share: the Hikari pool, the async wrapping, and every query; each dialect supplies only its schema, its differing statements, and how it binds UUIDs, booleans, and timestamps. |
+| `database/sql/SharedAccounts` | The shared `accounts` table per dialect: the canonical `CREATE TABLE IF NOT EXISTS` statement read from `schema/accounts/{dialect}.sql` and the insert that adds an account row unless it exists. |
 | `database/sqlite` | SQLite dialect of the shared SQL backend. |
 | `database/mysql` | MySQL dialect. |
 | `database/postgresql` | PostgreSQL dialect. |
-| `database/mongodb` | MongoDB implementation. |
+| `database/mongodb` | MongoDB implementation; account documents live in the shared `accounts` collection. |
 | `central` | Remote central server backend (MCEngine server-expressjs) over HTTP. |
 | `http/MCEconomyHttpClient` | Lightweight HTTP client used by the central backend. |
 
