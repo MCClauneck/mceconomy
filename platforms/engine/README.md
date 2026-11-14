@@ -21,7 +21,7 @@ choosing the implementation by probing the runtime classpath:
 3. Otherwise → **Spigot**: installs the classic `BukkitPlatformScheduler`.
 
 Everything after scheduler selection — config loading, database wiring, currency caching, the
-MCIdentity listener, and the `/balance` and `/pay` commands — is inherited unchanged from the
+player account listener, and the `/balance` and `/pay` commands — is inherited unchanged from the
 shared bootstrap, so runtime behavior on each platform is identical to the per-platform jars.
 
 ## How the universal jar is assembled
@@ -44,8 +44,6 @@ beyond `plugin.yml`.
   it is the superset of the Bukkit, Paper, and Folia types the bundled schedulers reference, and
   spigot-api / paper-api / folia-api are mutually exclusive on one classpath (same Gradle
   capability). Platform detection is reflective, so no Spigot/Paper compile dependency is needed.
-- **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the plugin
-  must be installed on the server.
 
 ## Building
 

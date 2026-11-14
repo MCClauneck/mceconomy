@@ -7,18 +7,17 @@ job, or quest-reward system) with **MCEconomy**. The economy system is exposed
 through the pure-Java `api`/`common` modules and the Bukkit event layer in
 `bukkit`, all published to GitHub Packages.
 
-MCEconomy is designed to sit on top of **MCIdentity**: with it installed, every
-economy account is bound to an *identity*, so a single player's money is kept
-separate per character. MCIdentity is a soft dependency: without it, accounts are
-bound to the player (`AccountTypes.PLAYER`, keyed by the player UUID).
-See [§4](#4-architecture--bind-money-to-the-identity-not-the-player).
+Every player's money belongs to the player: account type `AccountTypes.PLAYER`
+(`"player"`), keyed by the player UUID. Since MCIdentity 5.0.0 a player has one
+character whatever profession they wear, so MCEconomy no longer depends on
+MCIdentity at all. See [§4](#4-architecture--bind-money-to-the-player).
 
 **Contents**
 
 1. [Dependency Import](#1-dependency-import)
 2. [API Usage](#2-api-usage)
 3. [Bukkit Integration](#3-bukkit-integration)
-4. [Architecture — bind money to the identity, not the player](#4-architecture--bind-money-to-the-identity-not-the-player)
+4. [Architecture — bind money to the player](#4-architecture--bind-money-to-the-player)
 5. [Custom account types — clan, guild, and beyond](#5-custom-account-types--clan-guild-and-beyond)
 
 ---
@@ -161,11 +160,9 @@ premium or reward currency) can never move between accounts —
 
 ### 2.3 Accounts
 
-An account is identified by an **account type** plus a **UUID**. For
-MCIdentity-bound money the type is `AccountTypes.IDENTITY` and the UUID is the
-**identity UUID** (see [§4](#4-architecture--bind-money-to-the-identity-not-the-player)).
-On a server without MCIdentity the type is `AccountTypes.PLAYER` and the UUID is
-the **player UUID**. `AbstractMCEconomyPlugin#getAccounts()` returns the
+An account is identified by an **account type** plus a **UUID**. For a player's
+money the type is `AccountTypes.PLAYER` and the UUID is the **player UUID** (see
+[§4](#4-architecture--bind-money-to-the-player)). `AbstractMCEconomyPlugin#getAccounts()` returns the
 `AccountSource` MCEconomy itself uses, so a consumer can follow the same rule
 instead of hardcoding a type.
 Wallets are created lazily, so you rarely need `createAccount` — but it is
@@ -175,21 +172,21 @@ idempotent and safe to call to guarantee the account row exists:
 import io.github.mcclauneck.mceconomy.api.models.AccountTypes;
 import java.util.UUID;
 
-UUID identityUuid = /* from MCIdentity */ ;
+UUID playerUuid = player.getUniqueId();
 
-economy().createAccount(AccountTypes.IDENTITY, identityUuid);      // idempotent
-economy().hasAccount(AccountTypes.IDENTITY, identityUuid)
+economy().createAccount(AccountTypes.PLAYER, playerUuid);      // idempotent
+economy().hasAccount(AccountTypes.PLAYER, playerUuid)
          .thenAccept(exists -> { /* ... */ });
 ```
 
 ### 2.4 Read a balance
 
 ```java
-economy().getBalance(AccountTypes.IDENTITY, identityUuid, coin)
-         .thenAccept(balance -> { /* current balance for this identity */ });
+economy().getBalance(AccountTypes.PLAYER, playerUuid, coin)
+         .thenAccept(balance -> { /* current balance for this player */ });
 
 // Convenience check:
-economy().hasBalance(AccountTypes.IDENTITY, identityUuid, coin, 500)
+economy().hasBalance(AccountTypes.PLAYER, playerUuid, coin, 500)
          .thenAccept(enough -> { /* true if balance >= 500 */ });
 ```
 
@@ -207,11 +204,11 @@ import java.util.UUID;
 UUID txn = UUID.randomUUID();
 
 // Give money (credit). The future completes with the new balance.
-economy().addBalance(AccountTypes.IDENTITY, identityUuid, coin, 250,
+economy().addBalance(AccountTypes.PLAYER, playerUuid, coin, 250,
         LogScope.RECEIVE, txn, "quest", "daily_reward");
 
 // Take money (debit). The future completes exceptionally on insufficient funds.
-economy().removeBalance(AccountTypes.IDENTITY, identityUuid, coin, 100,
+economy().removeBalance(AccountTypes.PLAYER, playerUuid, coin, 100,
         LogScope.SPEND, UUID.randomUUID(), "shop", "buy_sword")
         .exceptionally(err -> {              // IllegalStateException: "Insufficient funds"
             // tell the player they cannot afford it
@@ -219,14 +216,14 @@ economy().removeBalance(AccountTypes.IDENTITY, identityUuid, coin, 100,
         });
 
 // Set an exact balance, logging the difference.
-economy().setBalance(AccountTypes.IDENTITY, identityUuid, coin, 1000,
+economy().setBalance(AccountTypes.PLAYER, playerUuid, coin, 1000,
         LogScope.RECEIVE, UUID.randomUUID(), "admin", "set_balance");
 
 // Move money between two accounts atomically (debits sender, credits receiver).
 // Fails exceptionally when the currency is not transferable.
 economy().transferBalance(
-        AccountTypes.IDENTITY, senderIdentityUuid,
-        AccountTypes.IDENTITY, receiverIdentityUuid,
+        AccountTypes.PLAYER, senderUuid,
+        AccountTypes.PLAYER, receiverUuid,
         coin, 500, UUID.randomUUID(), "player_transfer", "pay_command");
 ```
 
@@ -365,20 +362,20 @@ import org.bukkit.Bukkit;
 
 import java.util.UUID;
 
-void giveMoney(UUID identityUuid, Currency currency, long amount) {
+void giveMoney(UUID playerUuid, Currency currency, long amount) {
     EconomyTransactionEvent event = new EconomyTransactionEvent(
-            AccountTypes.IDENTITY, identityUuid, currency.systemCode(), amount, LogScope.RECEIVE);
+            AccountTypes.PLAYER, playerUuid, currency.systemCode(), amount, LogScope.RECEIVE);
     Bukkit.getPluginManager().callEvent(event);
     if (event.isCancelled()) {
         return;                                   // a listener vetoed the payout
     }
-    economy().addBalance(AccountTypes.IDENTITY, identityUuid, currency, amount,
+    economy().addBalance(AccountTypes.PLAYER, playerUuid, currency, amount,
             LogScope.RECEIVE, UUID.randomUUID(), "reward", "give_money");
 }
 ```
 
-And a listener in another plugin that refuses payouts — for example while an
-identity is "frozen":
+And a listener in another plugin that refuses payouts — for example while a
+player is "frozen":
 
 ```java
 import io.github.mcclauneck.mceconomy.api.models.LogScope;
@@ -395,7 +392,7 @@ public class FreezePayoutListener implements Listener {
         this.freeze = freeze;
     }
 
-    // Cancel *giving* money (a credit) to a frozen identity.
+    // Cancel *giving* money (a credit) to a frozen player.
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEconomyTransaction(EconomyTransactionEvent event) {
         boolean isCredit = event.getScope() == LogScope.RECEIVE
@@ -447,8 +444,8 @@ public class BalanceBoardListener implements Listener {
 - **Cancellable**: Yes (`setCancelled(true)` blocks the change).
 - **Constructor**: `EconomyTransactionEvent(String accountType, UUID accountUuid, String currencySystemCode, long amount, LogScope scope)`
 - **Accessors**:
-    - `getAccountType()` → `String` — the account type (e.g. `"identity"`).
-    - `getAccountUuid()` → `UUID` — the account UUID (the identity UUID for identity money).
+    - `getAccountType()` → `String` — the account type (e.g. `"player"`).
+    - `getAccountUuid()` → `UUID` — the account UUID (the player UUID for player money).
     - `getCurrencySystemCode()` → `String` — the currency being changed.
     - `getAmount()` → `long` — the non-negative magnitude of the change.
     - `getScope()` → `LogScope` — distinguishes a credit (`RECEIVE`/`DONATE`) from a debit (`SPEND`/`SEND`).
@@ -471,42 +468,23 @@ public class BalanceBoardListener implements Listener {
 
 ---
 
-## 4. Architecture — bind money to the identity, not the player
+## 4. Architecture — bind money to the player
 
-> [!WARNING]
-> **Each MCIdentity identity is an entirely separate character. Bind economy data
-> to the Identity UUID, never to the base Player UUID.**
-
-MCEconomy depends on **MCIdentity** (`depend: [MCIdentity]`). A single player owns
-**many** identities, each with its own distinct UUID, and only one is active at a
-time. Switching identities is a full context switch — as if the player logged into
-a completely different account. MCEconomy already keys its own accounts by the
-identity UUID through the `identity` account type
-(`io.github.mcclauneck.mceconomy.api.models.AccountTypes.IDENTITY`), created automatically
-when an identity is equipped.
-
-**Do this — key money by the Identity UUID:**
+Since MCIdentity 5.0.0 a player has one character, keyed by their own UUID, and
+wears one profession at a time. Money does not change with the worn profession,
+so MCEconomy keys every account by the **player UUID** under the `player` account
+type (`io.github.mcclauneck.mceconomy.api.models.AccountTypes.PLAYER`). The
+`PlayerAccountListener` creates the account when the player joins, and the
+`(account_type, account_uuid)` pair stays the key, so other plugins can still add
+their own account types (see [§5](#5-custom-account-types--clan-guild-and-beyond)).
 
 ```java
-// CORRECT: the balance belongs to the identity, not the human behind it.
-UUID identityUuid = /* MCIdentity: provider.getActiveIdentity(playerUuid) or an equip event */ ;
-economy().addBalance(AccountTypes.IDENTITY, identityUuid, coin, 1000,
+// The balance belongs to the player.
+economy().addBalance(AccountTypes.PLAYER, player.getUniqueId(), coin, 1000,
         LogScope.RECEIVE, UUID.randomUUID(), "reward", "welcome");
 ```
 
-**Never do this — keying by the Player UUID:**
-
-```java
-// WRONG: every identity this player owns would share ONE balance,
-// collapsing distinct characters into one wallet.
-economy().addBalance(AccountTypes.IDENTITY, player.getUniqueId(), coin, 1000, ...);
-```
-
-Resolve the active identity UUID with
-`MCIdentityProvider.instance.getActiveIdentity(playerUuid)` (or read
-`event.getIdentityUuid()` from the MCIdentity equip/unequip events), and use that
-UUID for **all** of your economy calls. For the full MCIdentity integration
-guide, see its own [`wiki/api.md`](https://github.com/MCOriax/mcidentity).
+MCEconomy does not read MCIdentity and does not need it installed.
 
 ---
 
@@ -514,7 +492,7 @@ guide, see its own [`wiki/api.md`](https://github.com/MCOriax/mcidentity).
 
 An economy account is keyed by an *account type* + *account UUID* pair, and the
 account type is **free-form**. MCEconomy itself only uses
-`AccountTypes.IDENTITY` (`"identity"`), so any other plugin can pick its own
+`AccountTypes.PLAYER` (`"player"`), so any other plugin can pick its own
 type string and instantly get a fully separate money space for its own entities
 — no schema change and no extra plugin required.
 
@@ -523,18 +501,18 @@ own UUID:
 
 | Plugin | Account type | Account UUID |
 | --- | --- | --- |
-| MCEconomy (built-in) | `"identity"` | The MCIdentity identity UUID |
+| MCEconomy (built-in) | `"player"` | The player UUID |
 | A clan plugin | `"clan"` | The clan UUID |
 | A guild plugin | `"guild"` | The guild UUID |
 
-Because the pair is the key, a clan's wallets never collide with a guild's or an
-identity's — **each clan and each guild has its own accounts, wallets, and
-transaction logs**, exactly like each identity does.
+Because the pair is the key, a clan's wallets never collide with a guild's or a
+player's — **each clan and each guild has its own accounts, wallets, and
+transaction logs**, exactly like each player does.
 
 ### 5.1 Example — a clan treasury
 
 A clan plugin can hold a clan-wide treasury on the **clan UUID** under its own
-`"clan"` account type. Members deposit from their identity wallet into the clan
+`"clan"` account type. Members deposit from their own wallet into the clan
 wallet with a single `transferBalance` call, which debits and credits atomically
 and writes both log rows:
 
@@ -559,10 +537,10 @@ public class ClanTreasuryService {
         economy.createAccount(ACCOUNT_TYPE_CLAN, clanUuid);
     }
 
-    /** Move money from a member's identity wallet into the clan treasury. */
-    public void deposit(UUID identityUuid, UUID clanUuid, Currency coin, long amount) {
+    /** Move money from a member's wallet into the clan treasury. */
+    public void deposit(UUID playerUuid, UUID clanUuid, Currency coin, long amount) {
         economy.transferBalance(
-                AccountTypes.IDENTITY, identityUuid,   // from: the member's identity
+                AccountTypes.PLAYER, playerUuid,       // from: the member's wallet
                 ACCOUNT_TYPE_CLAN, clanUuid,           // to:   the clan treasury
                 coin, amount, UUID.randomUUID(), "clan_treasury", "deposit");
     }
@@ -613,8 +591,8 @@ public class GuildUpkeepService {
 1. Choose one stable, lower-case account type per entity kind (`"clan"`,
    `"guild"`, `"town"`, ...) and never reuse another plugin's type for your own
    entities.
-2. Key by the entity's own UUID. Do not key clan or guild money by a player or
-   identity UUID — members change, the entity stays.
+2. Key by the entity's own UUID. Do not key clan or guild money by a player UUID —
+   members change, the entity stays.
 3. Keep using a fresh transaction UUID and a descriptive
    `referenceType`/`referenceId` pair on every mutating call so the shared
    `economy_logs` audit trail stays meaningful.

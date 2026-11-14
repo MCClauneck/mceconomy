@@ -19,11 +19,10 @@ the shared bootstrap installs that scheduler, then:
 4. `loadCurrencies()` — caches all currencies in memory.
 5. `ensureDefaultCurrencies()` — creates any configured currencies that are missing, so new
    `currencies` entries appear on the next enable.
-6. Registers `IdentityAccountListener` so every equipped MCIdentity identity gets its own
-   `identity` economy account, keyed by the identity UUID. The plugin listens to MCIdentity
-   events only — there are no raw player listeners.
+6. Registers `PlayerAccountListener` so every player gets their own `player` economy
+   account, keyed by the player UUID, when they join.
 7. Registers the `/balance` GUI (with its click listener) and the `/pay` command, both
-   bound to the sender's active identity.
+   bound to the sender's own account.
 
 All database operations are asynchronous and never block the main server thread. Follow the
 standard SpigotMC scheduling conventions.
@@ -33,8 +32,6 @@ standard SpigotMC scheduling conventions.
 - [`api`](../../api), [`common`](../../common), [`bukkit`](../../bukkit) — the shared MCEconomy modules,
   `compileOnly` (via `project(':...')`); the `engine` module shades them into the distributed jar.
 - `org.spigotmc:spigot-api` — `compileOnly`.
-- **MCIdentity** — a hard runtime dependency (`depend: [MCIdentity]` in `plugin.yml`); the
-  plugin must be installed on the server.
 
 ## Building
 

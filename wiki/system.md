@@ -10,7 +10,7 @@ each platform ships a thin entry point that shades the shared modules into a sin
 | --- | --- | --- | --- |
 | `api` | `:api` | Yes (`io.github.mcclauneck:api`) | Pure Java data contracts and immutable models, including the `AccountTypes` constants. No platform or database dependencies. |
 | `common` | `:common` | Yes (`io.github.mcclauneck:common`) | The central `MCEconomyProvider` and the SQLite, MySQL, PostgreSQL, MongoDB, and central database backends. |
-| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit layer: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, and the MCIdentity events and listeners. |
+| `bukkit` | `:bukkit` | Yes (`io.github.mcclauneck:bukkit`) | Shared Bukkit layer: the `AbstractMCEconomyPlugin` bootstrap, the `/balance` and `/pay` commands and GUI, the scheduler abstraction, and the player account listener. |
 | `tools` | `:tools` | No | Pure Java, read-only MCAgents AI tools and the reflective `AITool` proxy adapter; see [MCAgents AI Tools](agent-tools.md). Shaded by the engine. |
 | `platforms/spigotmc` | `:platforms:spigotmc` | No | SpigotMC entry point; bundled into the engine jar. |
 | `platforms/papermc` | `:platforms:papermc` | No | PaperMC entry point; bundled into the engine jar. |
@@ -38,14 +38,13 @@ Spigot, installing the region aware Folia scheduler on Folia and the classic Buk
 Spigot and Paper. Detection is purely reflective, so the engine compiles against the Folia API
 alone, the superset of the Bukkit, Paper, and Folia types the schedulers use.
 
-## MCIdentity integration
+## Accounts
 
-Each MCIdentity identity is a fully separate character, so economy data is bound to the identity
-UUID, never the base player UUID. When a player equips an identity, the shared
-`IdentityAccountListener` ensures an economy account exists for that identity using account type
-`identity` (`AccountTypes.IDENTITY`). The MCIdentity artifacts (`io.github.mcoriax:api`,
-`common`, `bukkit`) are consumed `compileOnly` from the MCIdentity GitHub Packages registry;
-the plugin provides the classes at runtime, so nothing is shaded.
+Every wallet belongs to the player: account type `player` (`AccountTypes.PLAYER`) keyed by the
+player UUID. `AccountBinding` binds `AccountSource.players()` at enable time and registers
+`PlayerAccountListener`, which creates the account on join. Since MCIdentity 5.0.0 a player has
+one character whatever profession they wear, so MCEconomy reads nothing from MCIdentity and
+compiles against no MCIdentity artifact.
 
 ## Accounts, wallets, and logging
 

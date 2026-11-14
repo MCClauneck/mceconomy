@@ -8,9 +8,6 @@ plugin extension for the Bukkit family of Minecraft servers, not a standalone ap
 - A **Java 25** runtime on the server that runs the plugin.
 - A **SpigotMC**, **PaperMC**, or **Folia** server on `api-version` `1.20` or newer. Deploy the
   platform jar that matches the server.
-- The **MCIdentity** plugin (`MCOriax/mcidentity`) installed on the server. It is a hard
-  dependency declared as `depend: [MCIdentity]` in every platform `plugin.yml`, so MCIdentity
-  always initializes first.
 - Runtime database drivers, declared in each platform `plugin.yml` and downloaded by the server
   (`com.zaxxer:HikariCP`, `org.mongodb:mongodb-driver-sync`).
 - A database backend. **SQLite** is the default and needs no external service. **MySQL**,
@@ -21,22 +18,20 @@ plugin extension for the Bukkit family of Minecraft servers, not a standalone ap
 - The bundled **Gradle wrapper** (Gradle 9.5.0). No system Gradle is required.
 - A **Java 25** toolchain. Gradle auto provisions it through the foojay resolver when it is not
   already installed.
-- **GitHub Packages credentials** to resolve the MCIdentity `compileOnly` artifacts and to
-  publish the `api`, `common`, and `bukkit` libraries. See [`environment.md`](environment.md)
+- **GitHub Packages credentials** to publish the `api`, `common`, and `bukkit` libraries. See [`environment.md`](environment.md)
   for the variables and the resolution order.
 
 ## Functional requirements
 
-- **Per identity accounts.** Economy data is bound to the active identity UUID with account
-  type `identity` (`AccountTypes.IDENTITY`), never the raw player UUID. Every identity a player
-  owns keeps its own wallets and transaction logs. Equipping an identity ensures its account
-  exists.
+- **Per player accounts.** Economy data is bound to the player UUID with account type
+  `player` (`AccountTypes.PLAYER`). Each player keeps one set of wallets and transaction logs,
+  whichever MCIdentity profession they wear. Joining ensures the account exists.
 - **Balance queries.** The `/balance` command opens a paged GUI, one custom head per currency,
   behind `mcclauneck.mceconomy.command.balance` (default `true`). The inventory sizes itself to
   the currencies on the page (one row for every nine currencies) and pads leftover slots, and
   the navigation row when a second page exists, with a black glass pane.
-- **Transfers.** The `/pay <player> <currency> <amount>` command pays another player's active
-  identity, behind `mcclauneck.mceconomy.command.pay` (default `true`). The transfer is atomic
+- **Transfers.** The `/pay <player> <currency> <amount>` command pays another player's account,
+  behind `mcclauneck.mceconomy.command.pay` (default `true`). The transfer is atomic
   and fully logged (`send` and `receive` rows plus a transaction receipt). Non transferable
   currencies are rejected.
 - **Currency model.** Currencies are configured per platform `config.yml`, keyed by system code,
